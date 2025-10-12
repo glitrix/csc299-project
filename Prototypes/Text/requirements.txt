@@ -1,0 +1,5 @@
+typer==0.12.5
+click==8.1.7
+rich>=13.7,<14
+markdown-it-py>=3,<4
+mdurl>=0.1.2,<0.2
