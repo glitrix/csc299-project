@@ -1,0 +1,16 @@
+[
+  {
+    "id": 1,
+    "title": "Buy groceries",
+    "description": "Milk, Bread, Eggs",
+    "completed": true,
+    "created_at": "2025-10-15 11:05:32"
+  },
+  {
+    "id": 2,
+    "title": "Go to the gym",
+    "description": "",
+    "completed": false,
+    "created_at": "2025-10-15 11:12:40"
+  }
+]
