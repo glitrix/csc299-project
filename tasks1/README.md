@@ -150,3 +150,12 @@ python tasks.py list
 ## License
 
 This is a prototype application created for educational purposes.
+
+## Archived files
+
+The one-time migration script and its summary have been moved to the `archive_migration/` folder for historical/reference purposes:
+
+- `archive_migration/migrate_json_to_md.py` - original migration script (kept for history)
+- `archive_migration/MIGRATION_SUMMARY.md` - migration notes and summary
+
+These files are not required for normal app operation but are kept for documentation and audit history.
