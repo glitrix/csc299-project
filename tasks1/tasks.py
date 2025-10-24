@@ -99,6 +99,28 @@ def complete_task(task_id: int) -> None:
         print(f"Error: Could not mark task {task_id} as complete.")
 
 
+def delete_task(task_id: int) -> None:
+    """Delete a task by ID."""
+    # First check if task exists
+    tasks = storage_markdown.list_tasks()
+    task_found = None
+    
+    for task in tasks:
+        if task['id'] == task_id:
+            task_found = task
+            break
+    
+    if not task_found:
+        print(f"Error: Task {task_id} not found.")
+        return
+    
+    # Delete the task
+    if storage_markdown.delete_task(task_id):
+        print(f"✓ Task {task_id} deleted: {task_found['title']}")
+    else:
+        print(f"Error: Could not delete task {task_id}.")
+
+
 def show_help() -> None:
     """Display help information."""
     help_text = """
@@ -112,6 +134,7 @@ COMMANDS:
     list                         List all tasks
     search <keyword>             Search tasks by keyword
     complete <task_id>           Mark a task as complete
+    delete <task_id>             Delete a task
     help                         Show this help message
 
 EXAMPLES:
@@ -119,6 +142,7 @@ EXAMPLES:
     python tasks.py list
     python tasks.py search "groceries"
     python tasks.py complete 1
+    python tasks.py delete 1
 """
     print(help_text)
 
@@ -162,6 +186,19 @@ def main():
         try:
             task_id = int(sys.argv[2])
             complete_task(task_id)
+        except ValueError:
+            print("Error: Task ID must be a number.")
+            sys.exit(1)
+    
+    elif command == "delete":
+        if len(sys.argv) < 3:
+            print("Error: Task ID required.")
+            print("Usage: python tasks.py delete <task_id>")
+            sys.exit(1)
+        
+        try:
+            task_id = int(sys.argv[2])
+            delete_task(task_id)
         except ValueError:
             print("Error: Task ID must be a number.")
             sys.exit(1)

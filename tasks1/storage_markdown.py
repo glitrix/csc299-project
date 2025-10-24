@@ -184,3 +184,25 @@ def search_tasks(keyword: str) -> List[Dict[str, Any]]:
         if keyword_lower in task['title'].lower() or 
            keyword_lower in task['description'].lower()
     ]
+
+
+def delete_task(task_id: int) -> bool:
+    """
+    Delete a task by removing its Markdown file.
+    
+    Args:
+        task_id: ID of the task to delete
+    
+    Returns:
+        True if successful, False if task not found
+    """
+    for name in os.listdir(VAULT_DIR):
+        if name.startswith(f"{task_id}-"):
+            path = os.path.join(VAULT_DIR, name)
+            try:
+                os.remove(path)
+                return True
+            except OSError:
+                return False
+    
+    return False
