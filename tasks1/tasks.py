@@ -16,69 +16,22 @@ Usage:
     python tasks.py complete <task_id>
 """
 
-import json
 import sys
-from pathlib import Path
-from datetime import datetime
 from typing import List, Dict, Any, Optional
-
-# Configuration
-TASKS_FILE = Path(__file__).parent / "tasks.json"
-
-
-def load_tasks() -> List[Dict[str, Any]]:
-    """Load tasks from JSON file."""
-    if not TASKS_FILE.exists():
-        return []
-    
-    try:
-        with open(TASKS_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except json.JSONDecodeError:
-        print("Error: Could not read tasks file. Starting with empty task list.")
-        return []
-
-
-def save_tasks(tasks: List[Dict[str, Any]]) -> None:
-    """Save tasks to JSON file."""
-    with open(TASKS_FILE, 'w', encoding='utf-8') as f:
-        json.dump(tasks, f, indent=2, ensure_ascii=False)
-
-
-def generate_id(tasks: List[Dict[str, Any]]) -> int:
-    """Generate a new task ID."""
-    if not tasks:
-        return 1
-    return max(task['id'] for task in tasks) + 1
-
-
-def get_timestamp() -> str:
-    """Get current timestamp in ISO format."""
-    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+import storage_markdown
 
 
 def add_task(title: str, description: str = "") -> None:
     """Add a new task."""
-    tasks = load_tasks()
+    task_id, file_path = storage_markdown.save_task(title, description)
     
-    new_task = {
-        'id': generate_id(tasks),
-        'title': title,
-        'description': description,
-        'completed': False,
-        'created_at': get_timestamp()
-    }
-    
-    tasks.append(new_task)
-    save_tasks(tasks)
-    
-    print(f"✓ Task added successfully (ID: {new_task['id']})")
+    print(f"✓ Task added successfully (ID: {task_id})")
     print(f"  Title: {title}")
 
 
 def list_tasks() -> None:
     """List all tasks."""
-    tasks = load_tasks()
+    tasks = storage_markdown.list_tasks()
     
     if not tasks:
         print("No tasks found.")
@@ -100,14 +53,7 @@ def list_tasks() -> None:
 
 def search_tasks(keyword: str) -> None:
     """Search tasks by keyword in title or description."""
-    tasks = load_tasks()
-    keyword_lower = keyword.lower()
-    
-    matching_tasks = [
-        task for task in tasks
-        if keyword_lower in task['title'].lower() or 
-           keyword_lower in task['description'].lower()
-    ]
+    matching_tasks = storage_markdown.search_tasks(keyword)
     
     if not matching_tasks:
         print(f"No tasks found matching '{keyword}'")
@@ -129,19 +75,28 @@ def search_tasks(keyword: str) -> None:
 
 def complete_task(task_id: int) -> None:
     """Mark a task as complete."""
-    tasks = load_tasks()
+    # First check if task exists and if it's already completed
+    tasks = storage_markdown.list_tasks()
+    task_found = None
     
     for task in tasks:
         if task['id'] == task_id:
-            if task['completed']:
-                print(f"Task {task_id} is already completed.")
-            else:
-                task['completed'] = True
-                save_tasks(tasks)
-                print(f"✓ Task {task_id} marked as complete: {task['title']}")
-            return
+            task_found = task
+            break
     
-    print(f"Error: Task {task_id} not found.")
+    if not task_found:
+        print(f"Error: Task {task_id} not found.")
+        return
+    
+    if task_found['completed']:
+        print(f"Task {task_id} is already completed.")
+        return
+    
+    # Mark task as complete
+    if storage_markdown.mark_complete(task_id):
+        print(f"✓ Task {task_id} marked as complete: {task_found['title']}")
+    else:
+        print(f"Error: Could not mark task {task_id} as complete.")
 
 
 def show_help() -> None:

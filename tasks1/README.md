@@ -1,6 +1,6 @@
 # Task Manager
 
-A simple command-line application for managing tasks with JSON storage.
+A simple command-line application for managing tasks with Markdown-based Personal Knowledge Management (PKM) storage.
 
 ## Features
 
@@ -8,7 +8,8 @@ A simple command-line application for managing tasks with JSON storage.
 - List all tasks
 - Search tasks by keyword
 - Mark tasks as complete
-- Persistent storage in JSON format
+- Persistent storage in Markdown format (Obsidian-compatible)
+- Each task stored as an individual Markdown file with YAML frontmatter
 
 ## Requirements
 
@@ -23,6 +24,8 @@ No installation required! This application uses only Python standard library mod
 ### Running the Application
 
 Navigate to the `tasks1` directory and use the following commands:
+
+**Note:** Use `py` instead of `python` on Windows if you encounter Python not found errors.
 
 ### Add a Task
 
@@ -76,36 +79,44 @@ python tasks.py help
 
 ## Data Storage
 
-Tasks are stored in a file called `tasks.json` in the same directory as `tasks.py`. This file is automatically created when you add your first task.
+Tasks are stored as individual Markdown files in the `vault/` directory. Each task is saved with YAML frontmatter, making them compatible with Obsidian and other PKM tools.
 
-### JSON Structure
+### Markdown File Structure
 
-Each task is stored with the following fields:
+Each task is stored with the following fields in YAML frontmatter:
 - `id`: Unique identifier (auto-generated)
 - `title`: Task title (required)
 - `description`: Task description (optional)
 - `completed`: Boolean status (true/false)
 - `created_at`: Timestamp when task was created
 
-Example `tasks.json`:
-```json
-[
-  {
-    "id": 1,
-    "title": "Buy groceries",
-    "description": "Milk, eggs, bread",
-    "completed": false,
-    "created_at": "2025-10-15 14:30:00"
-  },
-  {
-    "id": 2,
-    "title": "Study Python",
-    "description": "",
-    "completed": true,
-    "created_at": "2025-10-15 15:00:00"
-  }
-]
+Example task file (`vault/1-buy-groceries.md`):
+```markdown
+---
+id: 1
+title: "Buy groceries"
+description: "Milk, eggs, bread"
+completed: false
+created_at: "2025-10-15 14:30:00"
+---
+
+# Buy groceries
+
+Milk, eggs, bread
 ```
+
+### File Naming Convention
+
+Tasks are automatically saved with the pattern: `{id}-{slug}.md`
+- Example: `1-buy-groceries.md`, `2-study-python.md`
+
+### Obsidian Integration
+
+You can open the `vault/` folder in Obsidian to:
+- View and edit tasks in a rich Markdown editor
+- Link tasks together using `[[Task Name]]` syntax
+- Add tags, images, and other Markdown features
+- Use Obsidian's search and graph view
 
 ## Examples
 
@@ -134,7 +145,7 @@ python tasks.py list
 
 - **"No tasks found"**: You haven't added any tasks yet. Use `python tasks.py add` to create your first task.
 - **"Task ID not found"**: Make sure you're using the correct task ID shown in the list command.
-- **"Error reading tasks file"**: The `tasks.json` file may be corrupted. You can delete it to start fresh.
+- **Python not found**: Use `py` instead of `python` on Windows systems.
 
 ## License
 
