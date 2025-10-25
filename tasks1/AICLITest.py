@@ -9,4 +9,10 @@ completion = client.chat.completions.create(
   ]
 )
 
-print(completion.choices[0].message)
+# Extract and format the response nicely
+response = completion.choices[0].message.content
+print("\n" + "="*50)
+print("CHATBOT RESPONSE:")
+print("="*50)
+print(response)
+print("="*50 + "\n")
