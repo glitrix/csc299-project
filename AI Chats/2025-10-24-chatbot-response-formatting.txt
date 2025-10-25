@@ -1,0 +1,26 @@
+Date: October 24, 2025
+Topic: Formatting Chatbot Response Output
+
+User Request:
+The user asked to modify the aicliTest.py file to display chatbot responses in a nicer format instead of showing raw text with \n characters.
+
+Solution Implemented:
+Modified aicliTest.py to:
+1. Extract just the content from the message using .content property
+2. Added visual separators (===) to frame the response
+3. Added a clear "CHATBOT RESPONSE:" header
+4. Added proper spacing with newlines for better readability
+
+Before:
+print(completion.choices[0].message)
+
+After:
+response = completion.choices[0].message.content
+print("\n" + "="*50)
+print("CHATBOT RESPONSE:")
+print("="*50)
+print(response)
+print("="*50 + "\n")
+
+Result:
+The chatbot's response now displays in a clean, formatted manner with proper line breaks instead of showing the raw message object with escaped newline characters.
