@@ -1,0 +1,24 @@
+[project]
+name = "tasks4"
+version = "0.1.0"
+description = "OpenAI Task Summarizer using Chat Completions API"
+readme = "README.md"
+authors = [
+    { name = "Joshua Kowalczuk", email = "jkowal12@depaul.edu" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "openai>=1.40.0",
+]
+
+[project.scripts]
+tasks4 = "tasks4:main"
+
+[build-system]
+requires = ["uv_build>=0.9.7,<0.10.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.2",
+]
