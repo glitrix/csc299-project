@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "title": "Complete project documentation",
+    "description": "Write comprehensive docs",
+    "priority": "high",
+    "status": "pending",
+    "completed": false,
+    "created_at": "2025-11-02 10:34:56",
+    "updated_at": "2025-11-02 10:34:56"
+  },
+  {
+    "id": 2,
+    "title": "Review code",
+    "description": "Review pull requests",
+    "priority": "medium",
+    "status": "pending",
+    "completed": false,
+    "created_at": "2025-11-02 10:34:56",
+    "updated_at": "2025-11-02 10:34:56"
+  },
+  {
+    "id": 3,
+    "title": "Update dependencies",
+    "description": "Update to latest versions",
+    "priority": "low",
+    "status": "pending",
+    "completed": false,
+    "created_at": "2025-11-02 10:34:56",
+    "updated_at": "2025-11-02 10:34:56"
+  }
+]

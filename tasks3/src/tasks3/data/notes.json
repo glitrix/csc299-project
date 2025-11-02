@@ -1,0 +1,16 @@
+[
+  {
+    "id": 1,
+    "title": "Meeting Notes",
+    "content": "Discussed project timeline and deliverables",
+    "created_at": "2025-11-02 10:34:56",
+    "updated_at": "2025-11-02 10:34:56"
+  },
+  {
+    "id": 2,
+    "title": "Ideas",
+    "content": "New feature ideas for next sprint",
+    "created_at": "2025-11-02 10:34:56",
+    "updated_at": "2025-11-02 10:34:56"
+  }
+]
