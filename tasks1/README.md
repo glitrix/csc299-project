@@ -1,6 +1,6 @@
-# Task Manager
+# Task Manager (JSON Version)
 
-A simple command-line application for managing tasks with Markdown-based Personal Knowledge Management (PKM) storage.
+A simple command-line application for managing tasks with JSON storage.
 
 ## Features
 
@@ -8,8 +8,7 @@ A simple command-line application for managing tasks with Markdown-based Persona
 - List all tasks
 - Search tasks by keyword
 - Mark tasks as complete
-- Persistent storage in Markdown format (Obsidian-compatible)
-- Each task stored as an individual Markdown file with YAML frontmatter
+- Persistent storage in JSON format
 
 ## Requirements
 
@@ -79,44 +78,35 @@ python tasks.py help
 
 ## Data Storage
 
-Tasks are stored as individual Markdown files in the `vault/` directory. Each task is saved with YAML frontmatter, making them compatible with Obsidian and other PKM tools.
+Tasks are stored in a single JSON file (`tasks.json`) in the same directory as the application. Each task contains:
 
-### Markdown File Structure
-
-Each task is stored with the following fields in YAML frontmatter:
 - `id`: Unique identifier (auto-generated)
 - `title`: Task title (required)
 - `description`: Task description (optional)
 - `completed`: Boolean status (true/false)
 - `created_at`: Timestamp when task was created
 
-Example task file (`vault/1-buy-groceries.md`):
-```markdown
----
-id: 1
-title: "Buy groceries"
-description: "Milk, eggs, bread"
-completed: false
-created_at: "2025-10-15 14:30:00"
----
+### JSON File Structure
 
-# Buy groceries
-
-Milk, eggs, bread
+Example `tasks.json`:
+```json
+[
+  {
+    "id": 1,
+    "title": "Buy groceries",
+    "description": "Milk, eggs, bread",
+    "completed": false,
+    "created_at": "2025-10-15 14:30:00"
+  },
+  {
+    "id": 2,
+    "title": "Study Python",
+    "description": "",
+    "completed": true,
+    "created_at": "2025-10-15 14:35:00"
+  }
+]
 ```
-
-### File Naming Convention
-
-Tasks are automatically saved with the pattern: `{id}-{slug}.md`
-- Example: `1-buy-groceries.md`, `2-study-python.md`
-
-### Obsidian Integration
-
-You can open the `vault/` folder in Obsidian to:
-- View and edit tasks in a rich Markdown editor
-- Link tasks together using `[[Task Name]]` syntax
-- Add tags, images, and other Markdown features
-- Use Obsidian's search and graph view
 
 ## Examples
 
@@ -141,21 +131,22 @@ python tasks.py complete 1
 python tasks.py list
 ```
 
+## File Structure
+
+```
+tasks1/
+├── tasks.py          # Main application
+├── tasks.json        # Task data storage (created automatically)
+└── README.md         # This file
+```
+
 ## Troubleshooting
 
 - **"No tasks found"**: You haven't added any tasks yet. Use `python tasks.py add` to create your first task.
 - **"Task ID not found"**: Make sure you're using the correct task ID shown in the list command.
 - **Python not found**: Use `py` instead of `python` on Windows systems.
+- **JSON decode error**: The tasks.json file may be corrupted. The app will start with an empty task list and you can re-add your tasks.
 
 ## License
 
 This is a prototype application created for educational purposes.
-
-## Archived files
-
-The one-time migration script and its summary have been moved to the `archive_migration/` folder for historical/reference purposes:
-
-- `archive_migration/migrate_json_to_md.py` - original migration script (kept for history)
-- `archive_migration/MIGRATION_SUMMARY.md` - migration notes and summary
-
-These files are not required for normal app operation but are kept for documentation and audit history.
