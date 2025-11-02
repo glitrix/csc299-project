@@ -1,0 +1,16 @@
+[
+  {
+    "id": 1,
+    "title": "Development Notes",
+    "content": "Using object-oriented design with multiple manager classes for better organization",
+    "category": "work",
+    "tags": [
+      "python",
+      "oop",
+      "development"
+    ],
+    "linked_tasks": [],
+    "created_at": "2025-11-02 10:09:36",
+    "updated_at": "2025-11-02 10:09:36"
+  }
+]
