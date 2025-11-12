@@ -1,491 +1,507 @@
-# STUDYPAL_SPEC.md
+# StudyPal Requirements
 
-A precise, implementation-ready spec for **StudyPal** — a terminal-first study assistant that combines a **Personal Knowledge Management System (PKMS)**, **task management**, a **terminal chat interface**, and **local AI-style agents** to suggest links, flashcards, and study plans.
+A terminal-based study assistant combining a **Personal Knowledge Management System (PKMS)**, **task management**, a **chat interface**, and **AI agents** for study assistance.
 
-> **Hard constraint:** This project is **strictly Python-only**. No non-Python runtimes or services. It must run on Windows, macOS, and Linux.
+> **Core constraint:** Python-only project. Must run portably on Windows, macOS, and Linux.
 
 ---
 
 ## 1) Goals & Scope
 
-- Capture and organize study notes (Markdown) with tags and backlinks.
-- Manage tasks (assignments, readings, milestones) with due dates and priorities.
-- Provide a **chat-style terminal interface** for commands and results.
-- Include **local agents** that:
-  - suggest backlinks and tags for new notes,
-  - extract flashcards from notes,
-  - generate a 7-day study plan from tasks and constraints.
-- Persist state locally (default: **SQLite**). JSON files allowed for prototyping.
-- Be testable, deterministic, offline-first. Any LLM usage must be optional and disabled by default.
+### Core Features
+- **PKMS:** Store and organize study notes (Markdown format) with tags and links between notes
+- **Task Management:** Create and track tasks with due dates, priorities, and status tracking
+- **Chat Interface:** Terminal-based command interface for interacting with notes and tasks
+- **AI Agents:** Automated helpers that work with your stored knowledge and tasks
 
-**Non-goals:** web UI; cloud sync; multi-user; external APIs by default.
+### Data Storage
+- **Primary:** SQLite database (recommended for final version)
+- **Alternative:** JSON files (suitable for prototypes and development)
+- **Neo4J:** Optional for advanced graph-based relationships
 
----
+### Design Principles
+- Keep it simple and usable
+- Work offline by default
+- Easy to test and maintain
+- Clear command structure
 
-## 2) Hard Requirements & Constraints
-
-- **Language:** Python 3.11+ **only**.
-- **OS:** Windows, macOS, Linux; no OS-specific features. Use `pathlib` and `tempfile`.
-- **State:** SQLite (primary). JSON allowed in `/prototypes` only. No networked DB.
-- **Offline-first:** All core features work without internet or API keys.
-- **Determinism:** Agents ship **heuristic** implementations with deterministic outputs for tests.
-- **Optional LLM backend:** If enabled via env var (`STUDYPAL_LLM=1`), it **must not** be required for tests or core flows.
-- **Dependencies:** Keep minimal; pin exact versions in `requirements.txt`. Avoid platform-problematic libs.
-- **License:** MIT (default).
-- **CLI UX:** Single entrypoint `studypal` (via `console_scripts`) opens a chat loop.
-- **Tests:** `pytest` with >80% coverage on core modules. No network during tests.
+**What's NOT included:** Web interfaces, cloud sync, multi-user support
 
 ---
 
-## 3) Repository Structure
+## 2) Requirements & Constraints
+
+### Technical Requirements
+- **Language:** Python 3.11+ only
+- **Cross-Platform:** Must work on Windows, macOS, and Linux
+  - Use `pathlib` for file paths (not string concatenation)
+  - Use `os` or `platform` modules for OS-specific needs
+- **State Storage:** 
+  - SQLite (recommended for production)
+  - JSON files (acceptable, especially for prototypes)
+  - Neo4J (optional advanced feature)
+
+### Development Requirements  
+- **Dependencies:** Keep minimal and well-documented in `requirements.txt`
+- **Testing:** Use `pytest` for automated tests
+- **Entry Point:** Simple command to start the program (e.g., `python -m studypal` or `studypal`)
+- **Git History:** Fine-grained commits showing development progression
+
+### User Experience
+- **Offline First:** Core features work without internet connection
+- **Clear Commands:** Easy-to-remember terminal commands
+- **Helpful Feedback:** Show what's happening and any errors clearly
+
+---
+
+## 3) Suggested Project Structure
+
+Here's a flexible structure - adapt it to your needs:
 
 ```
-/studypal
-  ├─ src/studypal/
-  │   ├─ app.py                 # main chat loop (REPL)
-  │   ├─ ui/chat.py             # parser, command routing, rendering
-  │   ├─ config.py              # config & env handling
-  │   ├─ db.py                  # sqlite connection + migrations
-  │   ├─ common/types.py        # dataclasses / TypedDicts / Enums
-  │   ├─ pkms/
-  │   │   ├─ models.py          # Note, Tag, Link, Card
-  │   │   ├─ storage.py         # repo interfaces & sqlite impl
-  │   │   ├─ search.py          # FTS5 search helpers
-  │   │   └─ cards.py           # spaced repetition scheduler (SM-2)
-  │   ├─ tasks/
-  │   │   ├─ models.py          # Task, Project
-  │   │   ├─ storage.py         # repo interfaces & sqlite impl
-  │   │   └─ planner.py         # 7-day plan heuristics
-  │   ├─ agents/
-  │   │   ├─ linker.py          # backlink/tag suggester (TF-IDF)
-  │   │   ├─ cardsmith.py       # flashcard extractor from notes
-  │   │   ├─ planbot.py         # calls tasks.planner
-  │   │   └─ llm.py             # optional LLM hooks (disabled by default)
-  │   └─ utils/
-  │       ├─ text.py            # tokenization, ngrams, normalization
-  │       └─ tables.py          # ASCII/markdown table rendering
-  ├─ tests/
-  │   ├─ test_notes.py
+/studypal/
+  ├─ src/studypal/          # Main application code
+  │   ├─ __main__.py        # Entry point for running program
+  │   ├─ cli.py             # Command-line interface and chat loop
+  │   ├─ pkms.py            # PKMS functionality (notes, tags, links)
+  │   ├─ tasks.py           # Task management
+  │   ├─ agents.py          # AI agent implementations
+  │   ├─ storage.py         # Database/file operations
+  │   └─ utils.py           # Helper functions
+  │
+  ├─ tests/                 # Test files
+  │   ├─ test_pkms.py
   │   ├─ test_tasks.py
-  │   ├─ test_cards.py
-  │   ├─ test_agents.py
-  │   └─ test_cli.py
-  ├─ prototypes/                # discarded JSON-first explorations
-  ├─ README.md
-  ├─ SUMMARY.md
-  ├─ video.txt
-  ├─ requirements.txt
-  ├─ pyproject.toml             # build + console_scripts
-  └─ LICENSE
+  │   └─ test_agents.py
+  │
+  ├─ prototypes/            # Earlier explorations (keep for documentation)
+  ├─ data/                  # Storage for JSON files or SQLite database
+  ├─ README.md              # Project overview and setup instructions
+  ├─ SUMMARY.md             # Development process documentation (REQUIRED)
+  ├─ video.txt              # YouTube URL to demo video (REQUIRED)
+  ├─ requirements.txt       # Python dependencies
+  └─ pyproject.toml         # Optional: for packaging
 ```
+
+**Note:** This is a suggestion. Organize your code in a way that makes sense to you. The important parts are:
+- Clear separation of concerns
+- Easy to find and test components
+- Include required files (README.md, SUMMARY.md, video.txt)
 
 ---
 
-## 4) Data Model (SQLite, FTS5)
+## 4) Data Models
 
-Use `sqlite3` with PRAGMAs for reliability. Enable FTS5 for note search.
+### SQLite Schema (Recommended)
+
+If using SQLite, here's a simple schema to get started:
 
 ```sql
--- Notes & Linking
-CREATE TABLE IF NOT EXISTS notes (
-  id INTEGER PRIMARY KEY,
+-- Notes/Knowledge Base
+CREATE TABLE notes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
   title TEXT NOT NULL,
-  body_md TEXT NOT NULL,
+  content TEXT NOT NULL,
+  tags TEXT,                    -- Comma-separated or JSON array
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
 
-CREATE VIRTUAL TABLE IF NOT EXISTS notes_fts USING fts5(
-  title, body_md, content='notes', content_rowid='id'
-);
-
-CREATE TRIGGER IF NOT EXISTS notes_ai AFTER INSERT ON notes BEGIN
-  INSERT INTO notes_fts(rowid, title, body_md) VALUES (new.id, new.title, new.body_md);
-END;
-CREATE TRIGGER IF NOT EXISTS notes_au AFTER UPDATE ON notes BEGIN
-  UPDATE notes_fts SET title=new.title, body_md=new.body_md WHERE rowid=new.id;
-END;
-CREATE TRIGGER IF NOT EXISTS notes_ad AFTER DELETE ON notes BEGIN
-  DELETE FROM notes_fts WHERE rowid=old.id;
-END;
-
-CREATE TABLE IF NOT EXISTS tags (
-  id INTEGER PRIMARY KEY,
-  name TEXT NOT NULL UNIQUE
-);
-
-CREATE TABLE IF NOT EXISTS note_tags (
-  note_id INTEGER NOT NULL,
-  tag_id INTEGER NOT NULL,
-  PRIMARY KEY (note_id, tag_id),
-  FOREIGN KEY (note_id) REFERENCES notes(id) ON DELETE CASCADE,
-  FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
-);
-
-CREATE TABLE IF NOT EXISTS links (
-  src_id INTEGER NOT NULL,
-  dst_id INTEGER NOT NULL,
-  rel TEXT NOT NULL DEFAULT 'related',
-  PRIMARY KEY (src_id, dst_id, rel),
-  FOREIGN KEY (src_id) REFERENCES notes(id) ON DELETE CASCADE,
-  FOREIGN KEY (dst_id) REFERENCES notes(id) ON DELETE CASCADE
+-- Links between notes
+CREATE TABLE links (
+  from_note_id INTEGER,
+  to_note_id INTEGER,
+  link_type TEXT DEFAULT 'related',
+  FOREIGN KEY (from_note_id) REFERENCES notes(id),
+  FOREIGN KEY (to_note_id) REFERENCES notes(id)
 );
 
 -- Tasks
-CREATE TABLE IF NOT EXISTS tasks (
-  id INTEGER PRIMARY KEY,
+CREATE TABLE tasks (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
   title TEXT NOT NULL,
-  body TEXT DEFAULT '',
-  status TEXT NOT NULL DEFAULT 'todo', -- todo|doing|done|blocked
-  priority INTEGER NOT NULL DEFAULT 2, -- 1..5 (5 highest)
-  due_at TEXT,                         -- ISO8601
-  project TEXT DEFAULT '',
+  description TEXT,
+  status TEXT DEFAULT 'todo',   -- todo, in_progress, done
+  priority INTEGER DEFAULT 2,    -- 1 (low) to 5 (high)
+  due_date TEXT,                -- YYYY-MM-DD format
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
-
--- Flashcards (SM-2 scheduling)
-CREATE TABLE IF NOT EXISTS cards (
-  id INTEGER PRIMARY KEY,
-  note_id INTEGER NOT NULL,
-  prompt TEXT NOT NULL,
-  answer TEXT NOT NULL,
-  ease REAL NOT NULL DEFAULT 2.5,
-  interval INTEGER NOT NULL DEFAULT 0,   -- days
-  reps INTEGER NOT NULL DEFAULT 0,
-  lapses INTEGER NOT NULL DEFAULT 0,
-  due_at TEXT NOT NULL,                  -- ISO8601
-  created_at TEXT NOT NULL,
-  updated_at TEXT NOT NULL,
-  FOREIGN KEY (note_id) REFERENCES notes(id) ON DELETE CASCADE
-);
 ```
 
-**Time format:** ISO8601 UTC strings (e.g., `2025-11-12T15:04:05Z`).
+### JSON File Format (Alternative)
+
+For JSON storage, use simple structures:
+
+```json
+{
+  "notes": [
+    {
+      "id": 1,
+      "title": "Python Basics",
+      "content": "# Python Basics\n\n...",
+      "tags": ["programming", "python"],
+      "created_at": "2025-11-12T10:00:00",
+      "updated_at": "2025-11-12T10:00:00"
+    }
+  ],
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Complete homework",
+      "status": "todo",
+      "priority": 3,
+      "due_date": "2025-11-20",
+      "created_at": "2025-11-12T10:00:00"
+    }
+  ]
+}
+```
+
+**Choose the format that works best for your implementation.**
 
 ---
 
-## 5) Core Domain Types (Python)
+## 5) Example Python Data Structures
+
+Here are simple Python classes you might use (adapt as needed):
 
 ```python
-# src/studypal/common/types.py
 from dataclasses import dataclass
-from typing import Literal, Optional, Sequence
-
-Status = Literal["todo", "doing", "done", "blocked"]
+from typing import List, Optional
+from datetime import datetime
 
 @dataclass
 class Note:
-    id: int | None
-    title: str
-    body_md: str
-    tags: Sequence[str] = ()
-    created_at: str | None = None
-    updated_at: str | None = None
+    """Represents a knowledge note"""
+    id: Optional[int] = None
+    title: str = ""
+    content: str = ""
+    tags: List[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    
+    def __post_init__(self):
+        if self.tags is None:
+            self.tags = []
 
 @dataclass
 class Task:
-    id: int | None
-    title: str
-    body: str = ""
-    status: Status = "todo"
-    priority: int = 2
-    due_at: Optional[str] = None
-    project: str = ""
-    created_at: str | None = None
-    updated_at: str | None = None
-
-@dataclass
-class Card:
-    id: int | None
-    note_id: int
-    prompt: str
-    answer: str
-    ease: float = 2.5
-    interval: int = 0
-    reps: int = 0
-    lapses: int = 0
-    due_at: str | None = None
-    created_at: str | None = None
-    updated_at: str | None = None
-```
----
-
-## 6) Terminal Chat Interface (REPL)
-
-- **Entry:** `studypal` opens a prompt like `studypal>`.
-- **Format:** Each line is a command; results printed below. Support quotes and flags.
-- **Errors:** Human-readable message + non-zero exit code only for unrecoverable CLI issues.
-
-### Command Grammar (initial)
-
-| Command | Example | Behavior |
-|---|---|---|
-| `add note "<title>" [--tags t1,t2]` | `add note "Backprop" --tags ml,study` | Create note. Opens ID in output. |
-| `open note <id>` | `open note 12` | Show title, tags, body. |
-| `edit note <id> --title "New" --body "..." --tags +a,-b` |  | Update fields; `+` add, `-` remove tags. |
-| `find notes "<query>"` | `find notes "chain rule"` | FTS search title/body. |
-| `link <src> -> <dst> [rel]` | `link 12 -> 7 related` | Create backlink. |
-| `add task "<title>" [--due YYYY-MM-DD] [--prio 1..5] [--project P]` | `add task "Finish PS5" --due 2025-11-20 --prio 4 --project Math` | Create task. |
-| `next [--limit N]` | `next --limit 5` | Show prioritized list by overdue/due/priority. |
-| `task <id> set status <todo|doing|done|blocked>` | `task 14 set status doing` | Update status. |
-| `review` | `review` | Start flashcard session due today. |
-| `card add <note_id> "<prompt>" "<answer>"` | `card add 12 "What is ..." "It is ..."` | Manual card. |
-| `agent link-suggest <note_id>` | `agent link-suggest 12` | Suggest backlinks/tags. |
-| `agent cardsmith <note_id>` | `agent cardsmith 12` | Propose flashcards from note. |
-| `agent plan-week [--capacity H]` | `agent plan-week --capacity 2.5` | 7-day plan based on tasks. |
-| `export week --format md` |  | Emit Markdown schedule for next 7 days. |
-| `help` / `?` |  | List commands. |
-| `quit` / `exit` |  | End session. |
-
-**Natural language aliases (limited, deterministic):**  
-Implement simple intent patterns for: “add a task to X by {date}”, “find notes about Y”, “what should I do next?”. Avoid full NLP; use regex-based slots.
-
----
-
-## 7) Agents (Deterministic Heuristics)
-
-### 7.1 Linker (`agents/linker.py`)
-- **Input:** note_id
-- **Process:**  
-  - Normalize tokens (lowercase, strip punctuation).  
-  - Compute TF-IDF for the new note vs existing notes (`sklearn` optional; otherwise a tiny local TF-IDF).  
-  - Cosine similarity → top-k (default 5) above threshold (e.g., 0.22).  
-  - Tag suggestions: top frequent tags from similar notes.
-- **Output:** suggestions list `{dst_id, score, rel="related"}`, `{tag, score}`.
-- **Side effects:** None by default; offer to create `tasks` like “Confirm link 12 ↔ 7”.
-
-### 7.2 Cardsmith (`agents/cardsmith.py`)
-- **Input:** note_id
-- **Process:**  
-  - Parse headings and bullet lines; extract Q/A pairs by rules:  
-    - Inline flashcards `{{q: ... | a: ...}}`  
-    - “Term — Definition” lines → card  
-    - “Q: … A: …” blocks  
-  - Deduplicate by prompt hash.  
-- **Output:** `Card` candidates (not yet persisted unless user accepts).
-
-### 7.3 PlanBot (`agents/planbot.py`)
-- **Input:** tasks, capacity hours/day (default 2h)
-- **Process:**  
-  - Score `s = w1*overdue + w2*due_soon + w3*priority`, with `overdue∈{0,1}`, `due_soon = max(0, 1 - days_until_due/7)`. Suggested defaults: `w1=3, w2=2, w3=1`.  
-  - Greedy pack tasks into the next 7 days without exceeding daily capacity.  
-  - Split long tasks into sub-sessions of 30–90 minutes blocks.
-- **Output:** plan for 7 days with assignments per day.
-
-### 7.4 Optional LLM (`agents/llm.py`)
-- Disabled by default. If `STUDYPAL_LLM=1` and `OPENAI_API_KEY` present, expose **advisory** alternatives that mirror the heuristic outputs. All unit tests must target heuristics.
-
----
-
-## 8) Spaced Repetition (SM-2)
-
-Implement standard SM-2 with quality score `q ∈ {0..5}` input by user during `review`.
-
-Update rules:
-```
-if q < 3: interval = 1; lapses += 1
-else:
-  if reps == 0: interval = 1
-  elif reps == 1: interval = 6
-  else: interval = round(interval * ease)
-ease = max(1.3, ease + (0.1 - (5 - q)*(0.08 + (5 - q)*0.02)))
-reps = reps + 1 if q >= 3 else 0
-due_at = today + interval days
+    """Represents a task to complete"""
+    id: Optional[int] = None
+    title: str = ""
+    description: str = ""
+    status: str = "todo"  # todo, in_progress, done
+    priority: int = 2  # 1-5, where 5 is highest
+    due_date: Optional[str] = None  # YYYY-MM-DD format
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 ```
 
-UI prompts during review:
-- Show prompt, wait for `[Enter]` to reveal answer, then ask `Score (0-5)?`.  
-- Update card, show next due date.
+**Note:** Use simple dictionaries if you prefer - dataclasses are just one option.
+---
+
+## 6) Terminal Chat Interface
+
+Your program should provide a command-line interface where users type commands and see results.
+
+### Basic Command Examples
+
+Start simple and expand as needed:
+
+**PKMS Commands:**
+- `add note "Title" --tags tag1,tag2` - Create a new note
+- `list notes` - Show all notes
+- `show note <id>` - Display a specific note
+- `search notes "keyword"` - Find notes containing text
+- `link note <id1> to <id2>` - Create connection between notes
+
+**Task Commands:**
+- `add task "Task name" --due 2025-11-20 --priority 3` - Create task
+- `list tasks` - Show all tasks
+- `update task <id> --status done` - Update task status
+- `show task <id>` - Display task details
+- `tasks due` - Show tasks with upcoming due dates
+
+**AI Agent Commands:**
+- `suggest links for note <id>` - AI suggests related notes
+- `generate summary of note <id>` - AI creates summary
+- `plan week` - AI suggests weekly schedule based on tasks
+
+**General:**
+- `help` - Show available commands
+- `exit` or `quit` - Close the program
+
+### Interface Design Tips
+
+1. **Keep it simple:** Start with basic commands that work
+2. **Be forgiving:** Accept variations (e.g., "quit" and "exit")
+3. **Give feedback:** Always tell users what happened
+4. **Handle errors gracefully:** Explain what went wrong and how to fix it
+5. **Consider a loop structure:**
+   ```python
+   while True:
+       command = input("studypal> ")
+       if command in ["exit", "quit"]:
+           break
+       process_command(command)
+   ```
 
 ---
 
-## 9) Planning & Scheduling Logic
+## 7) AI Agents
 
-### Task prioritization for `next`
-1. Overdue first (earliest due first),
-2. Due within 7 days (earliest first),
-3. Then by priority desc,
-4. Then recently created.
+AI agents should interact with your stored knowledge and tasks. Here are some ideas - implement what makes sense for your project:
 
-### Weekly plan generation
-- Capacity per day defaults to 2.0h; configurable.
-- Break tasks into 30–90 min suggested blocks.
-- Respect due dates: tasks with due date can’t be scheduled after due date.
+### Agent Ideas
 
----
+**1. Link Suggester**
+- Analyzes note content and suggests connections to other notes
+- Simple approach: Find notes with similar keywords or tags
+- Advanced: Use word frequency analysis (TF-IDF) to find related content
+- Example: "Note about 'Python loops' might link to 'Control flow' note"
 
-## 10) Configuration
+**2. Study Planner**
+- Looks at your tasks and suggests a study schedule
+- Consider: due dates, priorities, estimated time
+- Output: Suggested daily/weekly plan
+- Example: "Monday: Work on Math homework (2 hours), Review Python notes (30 min)"
 
-- File locations (default within user home):
-  - Database: `~/.studypal/db.sqlite3`
-  - Logs: `~/.studypal/logs/studypal.log`
-- Env vars:
-  - `STUDYPAL_HOME`: override base dir
-  - `STUDYPAL_LLM`: `"1"` to enable optional LLM hooks (not used in tests)
-  - `OPENAI_API_KEY`: used only if `STUDYPAL_LLM=1`
-- CLI flags:
-  - `--db PATH` (for tests and ephemeral runs)
-  - `--no-color` (disable ANSI)
-  - `--export PATH` (where exports go)
+**3. Summary Generator**
+- Creates concise summaries of notes
+- Could use simple text extraction or LLM if available
+- Helpful for quick review
 
----
+**4. Tag Suggester**
+- Recommends tags for notes based on content
+- Look at common words, compare to existing tags
+- Helps maintain consistent tagging
 
-## 11) Logging & Errors
+### Implementation Approaches
 
-- Use `logging` (INFO default, DEBUG via `STUDYPAL_LOG=debug`).
-- Log SQL migrations at INFO.
-- Fail fast on schema mismatch; provide `studypal --migrate` command.
+**Simple (Rule-Based):**
+- Use keyword matching
+- Count word frequencies
+- Simple text analysis with Python's built-in tools
 
----
+**Advanced (with AI APIs):**
+- Use OpenAI API for intelligent suggestions
+- Make it optional - work offline by default
+- Store API key as environment variable
+- Example:
+  ```python
+  import os
+  if os.getenv("OPENAI_API_KEY"):
+      # Use AI features
+  else:
+      # Use simple rule-based approach
+  ```
 
-## 12) Testing Requirements (pytest)
-
-- **Unit:** CRUD for notes, tags, links; FTS search; tasks sorting; SM-2 updates (table tests); agents with fixed fixtures.  
-- **CLI:** simulate commands via Typer/CliRunner; assert stdout strings.  
-- **No network**; force `STUDYPAL_LLM` off in tests.
-- **Coverage:** ≥80% on `src/studypal` excluding `agents/llm.py`.
-
----
-
-## 13) Migrations
-
-- On startup, run `PRAGMA user_version`; apply forward SQL if needed.
-- Store SQL migration files under `src/studypal/migrations/NNN.sql`.
-- Never silently drop data; print prompt if destructive migration is attempted (require `--yes`).
+**Important:** Your agents should actually DO something useful, not just display information. They should analyze, suggest, or help organize your data.
 
 ---
 
-## 14) Rendering Rules (Terminal)
+## 8) Testing & Development
 
-- Use plain text with minimal ANSI (optional): headings, tables, code blocks.
-- Prefer monospace tables for lists (notes, tasks, plan).
-- Wrap lines at 100 chars for readability.
+### Testing with pytest
+- Write tests for your main functionality
+- Test note creation, retrieval, and search
+- Test task management features  
+- Test AI agent functions with sample data
+- Run tests with: `pytest` or `python -m pytest`
 
----
-
-## 15) Security & Privacy
-
-- All data is local. No telemetry.  
-- If LLM optional mode is enabled, show a warning and require explicit confirmation once per session.  
-- Redact secrets from logs.
-
----
-
-## 16) Performance Targets
-
-- 1k notes, 5k tasks: search < 150ms; `next` < 100ms; `agent link-suggest` < 1s on a mid-tier laptop.
-- Cold start (create DB + migrations) < 1.5s.
+### Development Tips
+1. **Start with prototypes:** Create simple JSON-based versions first
+2. **Iterate gradually:** Add features one at a time
+3. **Commit often:** Make fine-grained commits showing your progress
+4. **Test as you go:** Don't wait until the end to test
+5. **Document your process:** Keep notes for your SUMMARY.md
 
 ---
 
-## 17) Deliverables Mapping
+## 9) Configuration & Setup
 
-- **Final software:** in `src/studypal`, executable `studypal`.
-- **Commits:** granular with messages: `spec:`, `feat:`, `fix:`, `test:`, `docs:`.
-- **Prototypes:** `/prototypes` JSON-first experiments committed then discarded.
-- **`video.txt`**: contains a single YouTube URL (6–8 min demo).
-- **`SUMMARY.md`**: explains planning, AI-assistant modes, what worked/failed (detailed; >500 words recommended).
+### File Storage
+Keep your data files organized:
+- Default location: `./data/` or `~/.studypal/`
+- For SQLite: `studypal.db`
+- For JSON: `notes.json`, `tasks.json`
 
----
+### Environment Variables (Optional)
+```python
+import os
 
-## 18) Acceptance Criteria (must pass)
+# For AI features (optional)
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-1. `studypal` starts a REPL and accepts at least the commands listed in §6.  
-2. Notes can be created, tagged, linked, searched (FTS5) and opened.  
-3. Tasks can be created, listed via `next`, updated (status/priority/due), and exported weekly.  
-4. `review` session uses SM-2 and persists updates.  
-5. Agents run locally with deterministic heuristics and produce non-empty, sensible suggestions on realistic fixtures.  
-6. Works on Windows/macOS/Linux (tested via CI matrix or manual verification instructions).  
-7. All core functions pass tests with LLM disabled.  
-8. No internet required for tests or core usage.  
-9. **Python-only** codebase and dependencies.
+# Custom data directory
+DATA_DIR = os.getenv("STUDYPAL_DATA", "./data")
+```
 
----
-
-## 19) Implementation Notes & Patterns
-
-- Use repository pattern for storage (`storage.py`), exposing pure functions suitable for unit tests.  
-- Keep `datetime` in UTC; centralize now() in a single function to make tests stable (allow freeze).  
-- Write small utilities for tokenization and similarity; keep them deterministic (fixed stopword list, fixed stemming rules or none).  
-- Guard LLM code paths with `if settings.llm_enabled:` and keep outputs advisory (never required).
+### Command-Line Arguments
+Consider adding flags for flexibility:
+- `--data-dir PATH` - Custom data directory
+- `--db PATH` - Custom database path (useful for testing)
+- `--help` - Show available commands
 
 ---
 
-## 20) Stretch (Optional, not graded-critical)
+## 10) Project Deliverables (REQUIRED)
 
-- Export `.ics` for the weekly plan.  
-- ASCII charts for review counts and streaks.  
-- `import` from a folder of Markdown notes (frontmatter tags).  
-- `project` concept for tasks + notes linkage.
+Make sure your repository includes:
+
+### 1. Working Software
+- Python code that runs on Windows, macOS, and Linux
+- Clear entry point (how to start the program)
+- All features implemented and functional
+
+### 2. README.md
+- Project overview
+- Installation instructions
+- How to run the program
+- Example commands
+- List of features
+
+### 3. SUMMARY.md (CRITICAL)
+This should be detailed (500+ words recommended) and explain:
+- **How you used AI-coding assistants:**
+  - GitHub Copilot (autocomplete, chat, inline suggestions?)
+  - ChatGPT or Claude (planning, debugging, code generation?)
+  - Any other AI tools
+- **Your development process:**
+  - How you planned the project
+  - How you created specifications
+  - How you developed and tested
+  - How you iterated and improved
+- **What worked well:**
+  - Which AI tools/techniques were most helpful?
+  - What processes led to success?
+- **What didn't work:**
+  - False starts or mistakes
+  - Times when AI suggestions were wrong
+  - What you had to do manually
+- **Specific examples and details**
+
+### 4. video.txt
+- Contains single YouTube URL
+- 6-8 minute video demonstrating:
+  - Your software running
+  - Key features in action
+  - Overview of development process
+  - Brief code walkthrough
+
+### 5. Fine-Grained Commit History
+- Show incremental development
+- Don't just commit everything at the end
+- Commits should show: specs → prototypes → tests → implementation → refinements
+
+### 6. Tests
+- pytest test files
+- Tests for main functionality
+- Show they pass
 
 ---
 
-## 21) Example Session (Happy Path)
+## 11) Example Session
+
+Here's what using your program might look like:
 
 ```
-$ studypal
-studypal> add note "Backprop" --tags ml,study
-[✓] Note 12 created.
+$ python -m studypal
+Welcome to StudyPal!
+Type 'help' for available commands.
 
-studypal> find notes "chain rule"
-#12 Backprop — tags: ml,study
-  ... shows snippet ...
+studypal> add note "Python Functions"
+Created note #1: Python Functions
 
-studypal> agent link-suggest 12
-Suggestions:
-  link to #7 "Gradients 101" (score 0.31)
-  tags: calculus (0.44)
+studypal> add note "Object-Oriented Programming" --tags python,oop
+Created note #2: Object-Oriented Programming
 
-studypal> add task "Finish PS5" --due 2025-11-20 --prio 4 --project Math
-[✓] Task 14 created.
+studypal> add task "Complete Python assignment" --due 2025-11-20 --priority 4
+Created task #1: Complete Python assignment
 
-studypal> next --limit 3
-1) [prio 4] Finish PS5 (due 2025-11-20)  id:14
+studypal> list tasks
+Tasks:
+1. [Priority 4] Complete Python assignment (due: 2025-11-20) [todo]
+
+studypal> suggest links for note 1
+Analyzing note #1...
+Suggested links:
+- Note #2: Object-Oriented Programming (similarity: 0.75)
+
+studypal> plan week
+Weekly Study Plan:
+Monday: Complete Python assignment (2 hours)
+Tuesday: Review Python Functions note (30 min)
 ...
 
-studypal> review
-Card 1/10 — Press Enter to reveal.
-Q: What is the chain rule?
-A: ...
-Score (0-5)? 4
-[✓] Next due in 6 days.
+studypal> help
+Available commands:
+  add note <title> [--tags tags]
+  list notes
+  search notes <query>
+  add task <title> [--due date] [--priority 1-5]
+  list tasks
+  suggest links for note <id>
+  plan week
+  help
+  exit
 
-studypal> agent plan-week --capacity 2.5
-Mon: Finish PS5 (60m), Read Backprop note (30m) ...
-...
-
-studypal> export week --format md
-[✓] ./week-plan.md
+studypal> exit
+Goodbye!
 ```
 
 ---
 
-## 22) Dependencies (pin exact versions)
+## 12) Tips for Success
 
-- `rich==13.9.2` (optional ANSI tables; can be toggled off)
-- `typer==0.12.4` (CLI ergonomics) or `cmd2==2.4.3` (choose one)
-- `pytest==8.3.3`
-- `python-dateutil==2.9.0.post0`
-- *(Optional)* `scikit-learn==1.5.2` for TF-IDF; if omitted, implement tiny TF-IDF locally.
+### Use AI Assistants Effectively
+- **Plan first:** Describe what you want before coding
+- **Iterate:** Start simple, add complexity gradually
+- **Review AI suggestions:** Don't blindly accept code
+- **Ask for explanations:** Understand what the code does
+- **Use for multiple purposes:** Planning, coding, debugging, testing, documentation
 
-> All dependencies must be pure-Python or ship wheels for Win/macOS/Linux. No C compiler requirement for base install.
+### Development Approach
+1. **Create simple prototype** (JSON files, basic commands)
+2. **Add core features** (PKMS, tasks)
+3. **Implement chat interface**
+4. **Add AI agents**
+5. **Write tests**
+6. **Refine and polish**
+7. **Move to SQLite if desired**
+
+### Common Pitfalls to Avoid
+- Waiting too long to test
+- Making everything perfect before committing
+- Not documenting your AI assistant usage
+- Forgetting to make commits showing progression
+- Not testing cross-platform compatibility
 
 ---
 
-## 23) Out of Scope
+## 13) Additional Feature Ideas (Optional)
 
-- Web server, GUI, cloud sync, authentication, multi-user, calendar APIs, browser automation.
+If you finish early, consider adding:
+- Export notes to Markdown files
+- Import notes from a directory
+- Task categories or projects
+- Statistics (note count, completion rates)
+- Color-coded output
+- Search with filters
+- Bulk operations
+- Backup/restore functionality
 
 ---
 
-## 24) Build & Run
+## Remember
 
-- Install: `pip install -e .`  
-- Run: `studypal`  
-- Test: `pytest -q`  
-- LLM optional: `STUDYPAL_LLM=1 OPENAI_API_KEY=... studypal` (not used in tests; must be fully optional)
+This is YOUR project. These requirements are guidelines - adapt them to create something useful and interesting. Focus on:
+- Making it work properly
+- Using AI assistants effectively
+- Documenting your process thoroughly
+- Creating clear commit history
+- Having fun building something cool!
 
 ---
 
-**This spec is intentionally explicit to feed into an AI coding assistant. Honor all “strictly Python-only” requirements, keep the heuristic agents deterministic, and ensure the terminal experience is fast and pleasant.**
