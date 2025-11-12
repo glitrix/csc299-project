@@ -98,6 +98,8 @@ class CLI:
             self.cmd_stats(args)
         elif cmd == "ask":
             self.cmd_ask(args)
+        elif cmd == "clear":
+            self.cmd_clear(args)
         elif cmd == "quiz":
             self.cmd_quiz(args)
         elif cmd == "expand":
@@ -160,7 +162,9 @@ AI AGENTS (All use OpenAI API):
   search notes "natural language query"
       Semantic search - find notes by meaning
   ask "your question"
-      Ask questions about your notes and tasks
+      Ask questions about your notes and tasks (remembers conversation)
+  clear conversation
+      Clear the AI conversation history
   quiz <note_id> [--num 5]
       Generate quiz questions from a note
   expand <note_id> [--mode expand|clarify|examples|simplify]
@@ -727,6 +731,14 @@ GENERAL:
             print("=" * 70)
         except Exception as e:
             print(f"Sorry, I couldn't answer that question. Error: {e}")
+    
+    def cmd_clear(self, args: List[str]):
+        """Handle clear command - clear conversation history."""
+        if args and args[0].lower() == "conversation":
+            self.knowledge_assistant.clear_conversation()
+            print("✓ Conversation history cleared. Starting fresh!")
+        else:
+            print("Usage: clear conversation")
     
     def cmd_quiz(self, args: List[str]):
         """Handle quiz command - generate quiz questions from a note."""

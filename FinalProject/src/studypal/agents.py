@@ -943,6 +943,7 @@ class KnowledgeAssistant:
         """
         self.pkms = pkms
         self.task_manager = task_manager
+        self.conversation_history = []  # Store conversation history
         
         # Initialize OpenAI client
         api_key = os.getenv("OPENAI_API_KEY")
@@ -974,6 +975,10 @@ class KnowledgeAssistant:
             print("Please check your API key and internet connection.")
             raise
     
+    def clear_conversation(self):
+        """Clear the conversation history."""
+        self.conversation_history = []
+    
     def _answer_with_ai(self, question: str) -> str:
         """Use AI with RAG to answer question.
         
@@ -983,32 +988,35 @@ class KnowledgeAssistant:
         Returns:
             AI answer based on available knowledge
         """
-        # Gather context from notes and tasks
-        notes = self.pkms.list_notes()
-        tasks = self.task_manager.list_tasks()
+        # Gather context from notes and tasks (only if conversation history is empty or short)
+        # This prevents adding context on every message once conversation has started
+        needs_context = len(self.conversation_history) == 0
         
-        # Prepare context (limit to avoid token limits)
-        notes_context = []
-        for note in notes[:10]:
-            ctx = f"\n- {note['title']}"
-            if note.get('tags'):
-                ctx += f" [Tags: {', '.join(note['tags'])}]"
-            if note.get('content'):
-                ctx += f"\n  {note['content'][:300]}..."
-            notes_context.append(ctx)
-        
-        tasks_context = []
-        for task in tasks[:10]:
-            ctx = f"\n- {task['title']} (Status: {task['status']}, Priority: {task.get('priority', 'N/A')})"
-            if task.get('due_date'):
-                ctx += f", Due: {task['due_date']}"
-            if task.get('description'):
-                ctx += f"\n  {task['description'][:200]}..."
-            tasks_context.append(ctx)
-        
-        prompt = f"""Answer this question based on the user's notes and tasks.
-
-QUESTION: {question}
+        if needs_context:
+            notes = self.pkms.list_notes()
+            tasks = self.task_manager.list_tasks()
+            
+            # Prepare context (limit to avoid token limits)
+            notes_context = []
+            for note in notes[:10]:
+                ctx = f"\n- {note['title']}"
+                if note.get('tags'):
+                    ctx += f" [Tags: {', '.join(note['tags'])}]"
+                if note.get('content'):
+                    ctx += f"\n  {note['content'][:300]}..."
+                notes_context.append(ctx)
+            
+            tasks_context = []
+            for task in tasks[:10]:
+                ctx = f"\n- {task['title']} (Status: {task['status']}, Priority: {task.get('priority', 'N/A')})"
+                if task.get('due_date'):
+                    ctx += f", Due: {task['due_date']}"
+                if task.get('description'):
+                    ctx += f"\n  {task['description'][:200]}..."
+                tasks_context.append(ctx)
+            
+            # Add context as system message if this is the first question
+            context_message = f"""You are a helpful study assistant that answers questions based on the user's notes and tasks.
 
 AVAILABLE NOTES:
 {''.join(notes_context) if notes_context else 'No notes available'}
@@ -1016,19 +1024,37 @@ AVAILABLE NOTES:
 TASKS:
 {''.join(tasks_context) if tasks_context else 'No tasks available'}
 
-Provide a helpful, accurate answer based on the available information. If the information isn't sufficient, say so."""
-
+Remember the conversation history and refer back to previous topics when relevant. Provide helpful, accurate answers based on the available information. If the information isn't sufficient, you can offer general explanations."""
+            
+            messages = [{"role": "system", "content": context_message}]
+        else:
+            # Use simpler system message for follow-up questions
+            messages = [{"role": "system", "content": "You are a helpful study assistant. Continue the conversation naturally, remembering what was discussed before."}]
+        
+        # Add conversation history
+        messages.extend(self.conversation_history)
+        
+        # Add current question
+        messages.append({"role": "user", "content": question})
+        
         response = self.openai_client.chat.completions.create(
             model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": "You are a helpful study assistant that answers questions based on the user's notes and tasks."},
-                {"role": "user", "content": prompt}
-            ],
+            messages=messages,
             temperature=0.6,
             max_tokens=500
         )
         
-        return response.choices[0].message.content.strip()
+        answer = response.choices[0].message.content.strip()
+        
+        # Save to conversation history
+        self.conversation_history.append({"role": "user", "content": question})
+        self.conversation_history.append({"role": "assistant", "content": answer})
+        
+        # Keep conversation history reasonable (last 10 exchanges = 20 messages)
+        if len(self.conversation_history) > 20:
+            self.conversation_history = self.conversation_history[-20:]
+        
+        return answer
 
 
 class NoteExpander:
