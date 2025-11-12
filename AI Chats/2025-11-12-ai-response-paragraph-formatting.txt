@@ -1,0 +1,86 @@
+2025-11-12: AI Response Paragraph Formatting
+==============================================
+
+USER REQUEST:
+Can you make the AI response come out in more of a paragraph form instead of just one long line.
+
+CONTEXT:
+The user was experiencing an issue where AI-generated responses (like summaries) were displaying as one long continuous line in the terminal instead of being formatted into readable paragraphs.
+
+ANALYSIS:
+Examined the code and found that AI responses from commands like `summary`, `ask`, and `improve` were being printed directly without any text wrapping, causing them to display as single long lines that were difficult to read.
+
+SOLUTION IMPLEMENTED:
+
+1. Updated utils.py:
+   - Added import for `textwrap` module
+   - Created new `wrap_text()` function that:
+     * Wraps text to 70 characters wide
+     * Preserves paragraph breaks and intentional line breaks
+     * Handles empty lines properly
+     * Returns properly formatted text for terminal display
+
+2. Updated cli.py:
+   - Added `wrap_text` to imports from utils module
+   - Applied text wrapping to three AI response commands:
+     a) `cmd_summary()` - wraps note summaries
+     b) `cmd_ask()` - wraps knowledge assistant answers
+     c) `cmd_improve()` - wraps improved/expanded note content
+
+CODE CHANGES:
+
+File: FinalProject/src/studypal/utils.py
+- Added: import textwrap
+- Added new function:
+  ```python
+  def wrap_text(text: str, width: int = 70) -> str:
+      """Wrap text to specified width, preserving paragraphs.
+      
+      Args:
+          text: Text to wrap
+          width: Maximum line width
+          
+      Returns:
+          Wrapped text with proper line breaks
+      """
+      if not text:
+          return text
+      
+      # Split into paragraphs (preserve intentional line breaks)
+      paragraphs = text.split('\n')
+      
+      # Wrap each paragraph
+      wrapped_paragraphs = []
+      for paragraph in paragraphs:
+          if paragraph.strip():  # Skip empty lines
+              wrapped = textwrap.fill(paragraph, width=width)
+              wrapped_paragraphs.append(wrapped)
+          else:
+              wrapped_paragraphs.append('')  # Preserve empty lines
+      
+      return '\n'.join(wrapped_paragraphs)
+  ```
+
+File: FinalProject/src/studypal/cli.py
+- Updated imports to include: wrap_text
+- Modified cmd_summary():
+  Changed: print(summary)
+  To: print(wrap_text(summary))
+
+- Modified cmd_ask():
+  Changed: print(answer)
+  To: print(wrap_text(answer))
+
+- Modified cmd_improve():
+  Changed: print(improved_content)
+  To: print(wrap_text(improved_content))
+
+RESULT:
+AI responses now display in properly formatted paragraphs with text wrapped at 70 characters for optimal terminal readability. Users will see clean, readable output instead of single long lines.
+
+TESTING:
+Started StudyPal application successfully to verify changes compile and run without errors.
+
+FILES MODIFIED:
+- FinalProject/src/studypal/utils.py
+- FinalProject/src/studypal/cli.py
