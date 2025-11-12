@@ -279,7 +279,7 @@ Keep it concise and practical."""
 
         # Call OpenAI API
         response = self.openai_client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": "You are a helpful study planning assistant. Create practical, balanced study schedules."},
                 {"role": "user", "content": prompt}
@@ -414,7 +414,7 @@ Respond with task IDs in order of importance, one per line, like:
 ..."""
 
         response = self.openai_client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": "You are a productivity assistant helping prioritize daily tasks."},
                 {"role": "user", "content": prompt}
