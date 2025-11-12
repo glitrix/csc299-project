@@ -19,7 +19,7 @@ A terminal-based study assistant that combines Personal Knowledge Management (PK
 
 ### 🤖 AI Agents (Powered by OpenAI GPT-4o-mini)
 
-**ALL AI features require an OpenAI API key.** See [OPENAI_SETUP.md](OPENAI_SETUP.md) for setup instructions.
+**ALL AI features require an OpenAI API key.** See [OPENAI_SETUP.md](docs/OPENAI_SETUP.md) for setup instructions.
 
 #### Intelligent Note Management
 - **AI Summary Generator**: Creates intelligent, abstractive summaries of your notes
@@ -62,19 +62,14 @@ pip install -r requirements.txt
 ```
 
 4. **Set up OpenAI API key (REQUIRED):**
-   - See [OPENAI_SETUP.md](OPENAI_SETUP.md) for complete instructions
+   - See [OPENAI_SETUP.md](docs/OPENAI_SETUP.md) for complete instructions
    - The `plan week` and `plan today` commands require an OpenAI API key
 
 ## Usage
 
 ### Starting StudyPal
 
-**Simple method (Windows):**
-```powershell
-py studypal.py
-```
-
-**Or using module execution:**
+**Recommended method - using module execution:**
 
 **On Windows:**
 ```powershell
