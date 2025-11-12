@@ -6,7 +6,8 @@ from typing import List, Optional
 from .storage import Storage
 from .pkms import PKMS
 from .tasks import TaskManager
-from .agents import LinkSuggester, TagSuggester, StudyPlanner, SummaryGenerator
+from .agents import (LinkSuggester, TagSuggester, StudyPlanner, SummaryGenerator,
+                      SemanticSearchAgent, QuizGenerator, KnowledgeAssistant, NoteExpander)
 from .utils import parse_tags, format_date, truncate_text
 
 
@@ -28,6 +29,10 @@ class CLI:
         self.tag_suggester = TagSuggester(self.pkms)
         self.study_planner = StudyPlanner(self.task_manager, self.pkms)
         self.summary_generator = SummaryGenerator(self.pkms)
+        self.semantic_search = SemanticSearchAgent(self.pkms)
+        self.quiz_generator = QuizGenerator(self.pkms)
+        self.knowledge_assistant = KnowledgeAssistant(self.pkms, self.task_manager)
+        self.note_expander = NoteExpander(self.pkms)
         
         self.running = True
     
@@ -91,6 +96,12 @@ class CLI:
             self.cmd_summary(args)
         elif cmd == "stats":
             self.cmd_stats(args)
+        elif cmd == "ask":
+            self.cmd_ask(args)
+        elif cmd == "quiz":
+            self.cmd_quiz(args)
+        elif cmd == "expand":
+            self.cmd_expand(args)
         else:
             print(f"Unknown command: {cmd}. Type 'help' for available commands.")
     
@@ -135,17 +146,25 @@ TASKS:
   stats
       Show task statistics
 
-AI AGENTS:
-  suggest links <id>
-      Suggest related notes for a note
-  suggest tags <id>
-      Suggest tags for a note
+AI AGENTS (All use OpenAI API):
+  suggest links <note_id>
+      AI-powered semantic link suggestions between notes
+  suggest tags <note_id>
+      AI-generated contextually relevant tags
   plan week
-      Generate a weekly study plan
+      Generate an intelligent weekly study plan
   plan today
-      Get recommended tasks for today
-  summary <id>
-      Generate summary of a note
+      Get AI-recommended tasks for today
+  summary <note_id>
+      Generate AI-powered note summary
+  search notes "natural language query"
+      Semantic search - find notes by meaning
+  ask "your question"
+      Ask questions about your notes and tasks
+  quiz <note_id> [--num 5]
+      Generate quiz questions from a note
+  expand <note_id> [--mode expand|clarify|examples|simplify]
+      AI-assisted note improvement
 
 GENERAL:
   help
@@ -500,26 +519,53 @@ GENERAL:
             print(f"Unknown entity type: {entity_type}")
     
     def cmd_search(self, args: List[str]):
-        """Handle search commands."""
+        """Handle search commands with AI semantic search."""
         if len(args) < 2:
-            print("Usage: search notes \"keyword\"")
+            print("Usage: search notes \"keyword or natural language query\"")
             return
         
         entity_type = args[0].lower()
         query = args[1]
         
         if entity_type == "notes":
-            results = self.pkms.search_notes(query)
-            if not results:
-                print(f"No notes found matching '{query}'.")
-                return
+            # First try keyword search
+            keyword_results = self.pkms.search_notes(query)
             
-            print(f"\nFound {len(results)} note(s) matching '{query}':")
-            print("-" * 70)
-            for note in results:
-                tags_str = f"[{', '.join(note.get('tags', []))}]" if note.get('tags') else ""
-                print(f"#{note['id']}: {note['title']} {tags_str}")
-            print("-" * 70)
+            # Then try semantic search with AI
+            print(f"\n🔍 Performing AI-powered semantic search for: '{query}'...")
+            try:
+                semantic_results = self.semantic_search.semantic_search(query)
+                
+                if semantic_results:
+                    print("\n✨ AI Semantic Search Results:")
+                    print("=" * 70)
+                    for result in semantic_results:
+                        note = result['note']
+                        reason = result['relevance']
+                        tags_str = f"[{', '.join(note.get('tags', []))}]" if note.get('tags') else ""
+                        print(f"\n#{note['id']}: {note['title']} {tags_str}")
+                        print(f"  💡 Why: {reason}")
+                    print("=" * 70)
+                elif keyword_results:
+                    print("\nNo semantic matches, showing keyword results:")
+                    print("-" * 70)
+                    for note in keyword_results:
+                        tags_str = f"[{', '.join(note.get('tags', []))}]" if note.get('tags') else ""
+                        print(f"#{note['id']}: {note['title']} {tags_str}")
+                    print("-" * 70)
+                else:
+                    print(f"No notes found matching '{query}'.")
+            except Exception as e:
+                # Fallback to keyword search on error
+                if keyword_results:
+                    print("\n(AI search unavailable, showing keyword results)")
+                    print("-" * 70)
+                    for note in keyword_results:
+                        tags_str = f"[{', '.join(note.get('tags', []))}]" if note.get('tags') else ""
+                        print(f"#{note['id']}: {note['title']} {tags_str}")
+                    print("-" * 70)
+                else:
+                    print(f"No notes found matching '{query}'.")
         else:
             print(f"Search not supported for: {entity_type}")
     
@@ -566,13 +612,15 @@ GENERAL:
                 print(f"No link suggestions found for note #{entity_id}.")
                 return
             
-            print(f"\nSuggested links for note #{entity_id}:")
-            print("-" * 70)
+            print(f"\n✨ AI-Powered Link Suggestions for note #{entity_id}:")
+            print("=" * 70)
             for suggestion in suggestions:
                 note = suggestion['note']
-                similarity = suggestion['similarity']
-                print(f"#{note['id']}: {note['title']} (similarity: {similarity:.2f})")
-            print("-" * 70)
+                tags_str = f"[{', '.join(note.get('tags', []))}]" if note.get('tags') else ""
+                print(f"\n#{note['id']}: {note['title']} {tags_str}")
+                if 'reason' in suggestion:
+                    print(f"  💡 Why: {suggestion['reason']}")
+            print("=" * 70)
         
         elif suggestion_type == "tags":
             suggestions = self.tag_suggester.suggest_tags(entity_id)
@@ -661,3 +709,90 @@ GENERAL:
         print(f"Due this week: {stats['due_this_week']}")
         print(f"Completion rate: {stats['completion_rate']:.1f}%")
         print("=" * 70)
+    
+    def cmd_ask(self, args: List[str]):
+        """Handle ask command - answer questions about notes and tasks."""
+        if not args:
+            print("Usage: ask \"your question\"")
+            return
+        
+        question = ' '.join(args)
+        print(f"\n💭 Thinking about: {question}\n")
+        
+        try:
+            answer = self.knowledge_assistant.ask(question)
+            print("🤖 Answer:")
+            print("=" * 70)
+            print(answer)
+            print("=" * 70)
+        except Exception as e:
+            print(f"Sorry, I couldn't answer that question. Error: {e}")
+    
+    def cmd_quiz(self, args: List[str]):
+        """Handle quiz command - generate quiz questions from a note."""
+        if not args:
+            print("Usage: quiz <note_id> [--num 5]")
+            return
+        
+        try:
+            note_id = int(args[0])
+        except ValueError:
+            print(f"Invalid note ID: {args[0]}")
+            return
+        
+        num_questions = 5
+        if len(args) > 2 and args[1] == "--num":
+            try:
+                num_questions = int(args[2])
+            except ValueError:
+                pass
+        
+        print(f"\n📝 Generating {num_questions} quiz questions...\n")
+        
+        try:
+            questions = self.quiz_generator.generate_quiz(note_id, num_questions)
+            
+            if not questions:
+                print("Could not generate questions for this note.")
+                return
+            
+            print("Quiz Questions:")
+            print("=" * 70)
+            for i, q in enumerate(questions, 1):
+                print(f"\nQ{i}: {q.get('question', 'N/A')}")
+                print(f"Type: {q.get('type', 'N/A')}")
+                if q.get('options'):
+                    print(f"Options: {q['options']}")
+                print(f"Answer: {q.get('answer', 'N/A')}")
+                print("-" * 70)
+        except Exception as e:
+            print(f"Error generating quiz: {e}")
+    
+    def cmd_expand(self, args: List[str]):
+        """Handle expand command - AI-assisted note improvement."""
+        if not args:
+            print("Usage: expand <note_id> [--mode expand|clarify|examples|simplify]")
+            return
+        
+        try:
+            note_id = int(args[0])
+        except ValueError:
+            print(f"Invalid note ID: {args[0]}")
+            return
+        
+        mode = "expand"
+        if len(args) > 2 and args[1] == "--mode":
+            mode = args[2]
+        
+        print(f"\n✨ Improving note #{note_id} (mode: {mode})...\n")
+        
+        try:
+            improved_content = self.note_expander.expand_note(note_id, mode)
+            
+            print("Improved Content:")
+            print("=" * 70)
+            print(improved_content)
+            print("=" * 70)
+            print("\nTo save this, use: update note <id> --content \"<paste content>\"")
+        except Exception as e:
+            print(f"Error improving note: {e}")

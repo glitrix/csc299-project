@@ -20,7 +20,7 @@ except ImportError:
 
 
 class LinkSuggester:
-    """Agent that suggests links between notes based on content analysis."""
+    """Agent that suggests links between notes using AI semantic analysis."""
     
     def __init__(self, pkms: PKMS):
         """Initialize with PKMS instance.
@@ -29,6 +29,20 @@ class LinkSuggester:
             pkms: PKMS instance to analyze notes
         """
         self.pkms = pkms
+        
+        # Initialize OpenAI client
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            print("\nWARNING: OPENAI_API_KEY not found in environment.")
+            print("AI-powered link suggestions will not work.")
+            print("See OPENAI_SETUP.md for instructions.")
+            sys.exit(1)
+        
+        try:
+            self.openai_client = OpenAI(api_key=api_key)
+        except Exception as e:
+            print(f"\nERROR: Failed to initialize OpenAI client: {e}")
+            sys.exit(1)
     
     def _extract_keywords(self, text: str, min_length: int = 3) -> List[str]:
         """Extract meaningful keywords from text.
@@ -89,47 +103,127 @@ class LinkSuggester:
     
     def suggest_links(self, note_id: int, min_similarity: float = 0.15, 
                       max_suggestions: int = 5) -> List[Dict]:
-        """Suggest notes that might be related to the given note.
+        """Suggest notes that might be related using AI semantic analysis.
         
         Args:
             note_id: ID of the note to find links for
-            min_similarity: Minimum similarity threshold
+            min_similarity: Minimum similarity threshold (ignored for AI)
             max_suggestions: Maximum number of suggestions
             
         Returns:
-            List of suggested notes with similarity scores
+            List of suggested notes with reasons
         """
         target_note = self.pkms.get_note(note_id)
         if not target_note:
             return []
         
         all_notes = self.pkms.list_notes()
-        suggestions = []
         
         # Get existing links to avoid suggesting them
         existing_links = self.pkms.get_linked_notes(note_id)
         existing_ids = {note['id'] for note in existing_links}
         
-        for note in all_notes:
-            # Skip the target note itself and already linked notes
-            if note['id'] == note_id or note['id'] in existing_ids:
-                continue
-            
-            similarity = self._calculate_similarity(target_note, note)
-            
-            if similarity >= min_similarity:
-                suggestions.append({
-                    'note': note,
-                    'similarity': similarity
-                })
+        # Filter candidates
+        candidate_notes = [n for n in all_notes 
+                          if n['id'] != note_id and n['id'] not in existing_ids]
         
-        # Sort by similarity (highest first) and limit results
-        suggestions.sort(key=lambda x: x['similarity'], reverse=True)
+        if not candidate_notes:
+            return []
+        
+        # Use AI for semantic link suggestions
+        try:
+            return self._suggest_links_with_ai(target_note, candidate_notes, max_suggestions)
+        except Exception as e:
+            print(f"\nERROR: OpenAI API call failed: {e}")
+            print("Falling back to keyword-based suggestions...")
+            # Fallback to simple method
+            suggestions = []
+            for note in candidate_notes:
+                similarity = self._calculate_similarity(target_note, note)
+                if similarity >= min_similarity:
+                    suggestions.append({
+                        'note': note,
+                        'similarity': similarity,
+                        'reason': 'Keyword-based similarity'
+                    })
+            suggestions.sort(key=lambda x: x['similarity'], reverse=True)
+            return suggestions[:max_suggestions]
+    
+    def _suggest_links_with_ai(self, target_note: Dict, candidates: List[Dict], max_suggestions: int) -> List[Dict]:
+        """Use AI to find semantic relationships between notes.
+        
+        Args:
+            target_note: The note to find links for
+            candidates: List of candidate notes
+            max_suggestions: Maximum suggestions to return
+            
+        Returns:
+            List of suggested links with AI-generated reasons
+        """
+        # Prepare target note info
+        target_info = f"Title: {target_note['title']}\n"
+        target_info += f"Tags: {', '.join(target_note.get('tags', []))}\n"
+        target_info += f"Content: {target_note.get('content', '')[:500]}"  # Limit content length
+        
+        # Prepare candidate info (limit to top 10 to avoid token limits)
+        candidate_info = []
+        for i, note in enumerate(candidates[:10]):
+            info = f"\n{i+1}. ID {note['id']}: {note['title']}"
+            if note.get('tags'):
+                info += f" [Tags: {', '.join(note['tags'])}]"
+            if note.get('content'):
+                info += f"\n   Content preview: {note['content'][:200]}..."
+            candidate_info.append(info)
+        
+        prompt = f"""Analyze these notes and suggest which ones should be linked to the target note.
+Consider semantic relationships, shared concepts, prerequisite knowledge, or complementary topics.
+
+TARGET NOTE:
+{target_info}
+
+CANDIDATE NOTES:
+{''.join(candidate_info)}
+
+Respond with up to {max_suggestions} suggestions in this format:
+ID X - Brief reason why they should be linked
+ID Y - Brief reason why they should be linked
+
+Only suggest notes with meaningful conceptual connections."""
+
+        response = self.openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are a knowledge management assistant that identifies semantic relationships between study notes."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.5,
+            max_tokens=400
+        )
+        
+        ai_response = response.choices[0].message.content
+        
+        # Parse AI response
+        suggestions = []
+        note_dict = {note['id']: note for note in candidates}
+        
+        for line in ai_response.split('\n'):
+            match = re.search(r'ID\s+(\d+)\s*-\s*(.+)', line)
+            if match:
+                note_id = int(match.group(1))
+                reason = match.group(2).strip()
+                
+                if note_id in note_dict:
+                    suggestions.append({
+                        'note': note_dict[note_id],
+                        'similarity': 0.9,  # High score for AI suggestions
+                        'reason': reason
+                    })
+        
         return suggestions[:max_suggestions]
 
 
 class TagSuggester:
-    """Agent that suggests tags for notes based on content."""
+    """Agent that suggests tags for notes using AI content analysis."""
     
     def __init__(self, pkms: PKMS):
         """Initialize with PKMS instance.
@@ -138,9 +232,23 @@ class TagSuggester:
             pkms: PKMS instance to analyze notes
         """
         self.pkms = pkms
+        
+        # Initialize OpenAI client
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            print("\nWARNING: OPENAI_API_KEY not found in environment.")
+            print("AI-powered tag suggestions will not work.")
+            print("See OPENAI_SETUP.md for instructions.")
+            sys.exit(1)
+        
+        try:
+            self.openai_client = OpenAI(api_key=api_key)
+        except Exception as e:
+            print(f"\nERROR: Failed to initialize OpenAI client: {e}")
+            sys.exit(1)
     
     def suggest_tags(self, note_id: int, max_suggestions: int = 5) -> List[str]:
-        """Suggest tags for a note based on its content and existing tags.
+        """Suggest tags for a note using AI content analysis.
         
         Args:
             note_id: ID of the note
@@ -153,30 +261,68 @@ class TagSuggester:
         if not note:
             return []
         
-        # Get all existing tags in the system
-        all_tags = self.pkms.get_all_tags()
-        current_tags = set(note.get('tags', []))
+        # Use AI for intelligent tag suggestions
+        try:
+            return self._suggest_tags_with_ai(note, max_suggestions)
+        except Exception as e:
+            print(f"\nERROR: OpenAI API call failed: {e}")
+            print("Please check your API key and internet connection.")
+            raise
+    
+    def _suggest_tags_with_ai(self, note: Dict, max_suggestions: int) -> List[str]:
+        """Use AI to suggest contextually relevant tags.
         
-        # Extract keywords from the note
-        text = f"{note['title']} {note.get('content', '')}"
-        keywords = re.findall(r'\b\w+\b', text.lower())
-        keyword_counts = Counter(keywords)
-        
-        # Find tags that match keywords in the note
-        suggestions = []
-        for tag in all_tags:
-            if tag in current_tags:
-                continue
+        Args:
+            note: Note dictionary
+            max_suggestions: Maximum number of suggestions
             
-            tag_lower = tag.lower()
-            # Check if tag appears in the note content
-            if tag_lower in [k.lower() for k in keywords]:
-                count = keyword_counts.get(tag_lower, 0)
-                suggestions.append((tag, count))
+        Returns:
+            List of suggested tags
+        """
+        # Get existing tags in the system for context
+        all_tags = self.pkms.get_all_tags()
+        current_tags = note.get('tags', [])
         
-        # Sort by frequency and return top suggestions
-        suggestions.sort(key=lambda x: x[1], reverse=True)
-        return [tag for tag, _ in suggestions[:max_suggestions]]
+        # Prepare note info
+        title = note['title']
+        content = note.get('content', '')[:800]  # Limit content length
+        
+        existing_tags_str = ', '.join(all_tags[:20]) if all_tags else 'None yet'
+        current_tags_str = ', '.join(current_tags) if current_tags else 'None'
+        
+        prompt = f"""Suggest {max_suggestions} relevant tags for this study note.
+Consider the topic, key concepts, and relationships to existing tags.
+Tags should be concise (1-2 words) and useful for organization.
+
+Note Title: {title}
+Current Tags: {current_tags_str}
+Content:
+{content}
+
+Existing tags in the system: {existing_tags_str}
+
+Respond with just the tag names, one per line. Prefer existing tags when appropriate, but suggest new ones if needed."""
+
+        response = self.openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant that suggests relevant, concise tags for study notes."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.6,
+            max_tokens=150
+        )
+        
+        ai_response = response.choices[0].message.content
+        
+        # Parse tags from response
+        suggested_tags = []
+        for line in ai_response.split('\n'):
+            line = line.strip().strip('-•*').strip()
+            if line and line not in current_tags:
+                suggested_tags.append(line)
+        
+        return suggested_tags[:max_suggestions]
 
 
 class StudyPlanner:
@@ -449,7 +595,7 @@ Respond with task IDs in order of importance, one per line, like:
 
 
 class SummaryGenerator:
-    """Agent that generates summaries of notes."""
+    """Agent that generates summaries of notes using AI."""
     
     def __init__(self, pkms: PKMS):
         """Initialize with PKMS instance.
@@ -458,9 +604,23 @@ class SummaryGenerator:
             pkms: PKMS instance
         """
         self.pkms = pkms
+        
+        # Initialize OpenAI client
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            print("\nWARNING: OPENAI_API_KEY not found in environment.")
+            print("AI-powered summaries will not work.")
+            print("See OPENAI_SETUP.md for instructions.")
+            sys.exit(1)
+        
+        try:
+            self.openai_client = OpenAI(api_key=api_key)
+        except Exception as e:
+            print(f"\nERROR: Failed to initialize OpenAI client: {e}")
+            sys.exit(1)
     
     def generate_summary(self, note_id: int, max_sentences: int = 3) -> str:
-        """Generate a summary of a note.
+        """Generate an AI-powered summary of a note.
         
         Args:
             note_id: ID of the note to summarize
@@ -477,24 +637,50 @@ class SummaryGenerator:
         if not content:
             return f"Note '{note['title']}' has no content."
         
-        # Simple extractive summarization
-        # Split into sentences
-        sentences = re.split(r'[.!?]+', content)
-        sentences = [s.strip() for s in sentences if s.strip()]
+        # Use AI for intelligent summarization
+        try:
+            return self._generate_ai_summary(note, max_sentences)
+        except Exception as e:
+            print(f"\nERROR: OpenAI API call failed: {e}")
+            print("Please check your API key and internet connection.")
+            raise
+    
+    def _generate_ai_summary(self, note: Dict, max_sentences: int) -> str:
+        """Generate summary using OpenAI.
         
-        if len(sentences) <= max_sentences:
-            return content
+        Args:
+            note: Note dictionary
+            max_sentences: Maximum sentences in summary
+            
+        Returns:
+            AI-generated summary
+        """
+        title = note['title']
+        content = note.get('content', '')
+        tags = ', '.join(note.get('tags', []))
         
-        # Extract key sentences (simple approach: first, middle, last)
-        if len(sentences) >= 3:
-            indices = [0, len(sentences) // 2, -1]
-        elif len(sentences) == 2:
-            indices = [0, -1]
-        else:
-            indices = [0]
+        prompt = f"""Summarize this study note in {max_sentences} sentences or less.
+Focus on the key concepts and main ideas.
+
+Title: {title}
+Tags: {tags if tags else 'None'}
+
+Content:
+{content}
+
+Provide a clear, concise summary suitable for quick review."""
+
+        response = self.openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are a helpful study assistant that creates clear, concise summaries of study notes."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.5,
+            max_tokens=200
+        )
         
-        summary_sentences = [sentences[i] for i in indices[:max_sentences]]
-        return '. '.join(summary_sentences) + '.'
+        return response.choices[0].message.content.strip()
     
     def summarize_all_notes(self, tag: Optional[str] = None) -> List[Dict]:
         """Generate summaries for all notes or notes with a specific tag.
@@ -518,3 +704,424 @@ class SummaryGenerator:
             })
         
         return summaries
+
+
+class SemanticSearchAgent:
+    """Agent that performs semantic search over notes using AI."""
+    
+    def __init__(self, pkms: PKMS):
+        """Initialize with PKMS instance.
+        
+        Args:
+            pkms: PKMS instance
+        """
+        self.pkms = pkms
+        
+        # Initialize OpenAI client
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            print("\nWARNING: OPENAI_API_KEY not found in environment.")
+            print("AI-powered semantic search will not work.")
+            print("See OPENAI_SETUP.md for instructions.")
+            sys.exit(1)
+        
+        try:
+            self.openai_client = OpenAI(api_key=api_key)
+        except Exception as e:
+            print(f"\nERROR: Failed to initialize OpenAI client: {e}")
+            sys.exit(1)
+    
+    def semantic_search(self, query: str, max_results: int = 5) -> List[Dict]:
+        """Perform semantic search using natural language query.
+        
+        Args:
+            query: Natural language search query
+            max_results: Maximum number of results
+            
+        Returns:
+            List of matching notes with relevance scores
+        """
+        all_notes = self.pkms.list_notes()
+        
+        if not all_notes:
+            return []
+        
+        try:
+            return self._semantic_search_with_ai(query, all_notes, max_results)
+        except Exception as e:
+            print(f"\nERROR: OpenAI API call failed: {e}")
+            print("Please check your API key and internet connection.")
+            raise
+    
+    def _semantic_search_with_ai(self, query: str, notes: List[Dict], max_results: int) -> List[Dict]:
+        """Use AI to find semantically relevant notes.
+        
+        Args:
+            query: Search query
+            notes: List of all notes
+            max_results: Maximum results to return
+            
+        Returns:
+            List of relevant notes with scores
+        """
+        # Prepare notes info (limit to 20 for token efficiency)
+        notes_info = []
+        for note in notes[:20]:
+            info = f"\nID {note['id']}: {note['title']}"
+            if note.get('tags'):
+                info += f" [Tags: {', '.join(note['tags'])}]"
+            if note.get('content'):
+                info += f"\n  {note['content'][:250]}..."
+            notes_info.append(info)
+        
+        prompt = f"""Find notes that best match this query: "{query}"
+
+Consider semantic meaning, not just keyword matches.
+
+AVAILABLE NOTES:
+{''.join(notes_info)}
+
+Respond with up to {max_results} most relevant notes in this format:
+ID X - Relevance reason
+ID Y - Relevance reason
+
+Only include notes that are actually relevant to the query."""
+
+        response = self.openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are a semantic search assistant that finds relevant information based on meaning, not just keywords."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.3,
+            max_tokens=400
+        )
+        
+        ai_response = response.choices[0].message.content
+        
+        # Parse results
+        results = []
+        note_dict = {note['id']: note for note in notes}
+        
+        for line in ai_response.split('\n'):
+            match = re.search(r'ID\s+(\d+)\s*-\s*(.+)', line)
+            if match:
+                note_id = int(match.group(1))
+                reason = match.group(2).strip()
+                
+                if note_id in note_dict:
+                    results.append({
+                        'note': note_dict[note_id],
+                        'relevance': reason
+                    })
+        
+        return results[:max_results]
+
+
+class QuizGenerator:
+    """Agent that generates quiz questions from notes."""
+    
+    def __init__(self, pkms: PKMS):
+        """Initialize with PKMS instance.
+        
+        Args:
+            pkms: PKMS instance
+        """
+        self.pkms = pkms
+        
+        # Initialize OpenAI client
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            print("\nWARNING: OPENAI_API_KEY not found in environment.")
+            print("AI-powered quiz generation will not work.")
+            print("See OPENAI_SETUP.md for instructions.")
+            sys.exit(1)
+        
+        try:
+            self.openai_client = OpenAI(api_key=api_key)
+        except Exception as e:
+            print(f"\nERROR: Failed to initialize OpenAI client: {e}")
+            sys.exit(1)
+    
+    def generate_quiz(self, note_id: int, num_questions: int = 5) -> List[Dict]:
+        """Generate quiz questions from a note.
+        
+        Args:
+            note_id: ID of the note
+            num_questions: Number of questions to generate
+            
+        Returns:
+            List of question dictionaries
+        """
+        note = self.pkms.get_note(note_id)
+        if not note:
+            return []
+        
+        content = note.get('content', '')
+        if not content:
+            return []
+        
+        try:
+            return self._generate_quiz_with_ai(note, num_questions)
+        except Exception as e:
+            print(f"\nERROR: OpenAI API call failed: {e}")
+            print("Please check your API key and internet connection.")
+            raise
+    
+    def _generate_quiz_with_ai(self, note: Dict, num_questions: int) -> List[Dict]:
+        """Generate quiz questions using AI.
+        
+        Args:
+            note: Note dictionary
+            num_questions: Number of questions
+            
+        Returns:
+            List of question dictionaries
+        """
+        title = note['title']
+        content = note.get('content', '')
+        
+        prompt = f"""Generate {num_questions} quiz questions to test understanding of this study note.
+Include a mix of question types: multiple choice, true/false, and short answer.
+
+Note Title: {title}
+Content:
+{content}
+
+Format each question like this:
+Q1: [Question text]
+Type: [multiple_choice/true_false/short_answer]
+Answer: [Correct answer]
+Options: [For multiple choice: A) ... B) ... C) ... D) ...]
+
+Make questions test understanding, not just memorization."""
+
+        response = self.openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are a helpful tutor that creates effective quiz questions to test student understanding."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7,
+            max_tokens=800
+        )
+        
+        ai_response = response.choices[0].message.content
+        
+        # Parse questions
+        questions = []
+        current_q = {}
+        
+        for line in ai_response.split('\n'):
+            line = line.strip()
+            if line.startswith('Q') and ':' in line:
+                if current_q:
+                    questions.append(current_q)
+                current_q = {'question': line.split(':', 1)[1].strip()}
+            elif line.startswith('Type:'):
+                current_q['type'] = line.split(':', 1)[1].strip()
+            elif line.startswith('Answer:'):
+                current_q['answer'] = line.split(':', 1)[1].strip()
+            elif line.startswith('Options:'):
+                current_q['options'] = line.split(':', 1)[1].strip()
+        
+        if current_q:
+            questions.append(current_q)
+        
+        return questions
+
+
+class KnowledgeAssistant:
+    """Agent that answers questions about notes and tasks using RAG."""
+    
+    def __init__(self, pkms: PKMS, task_manager: TaskManager):
+        """Initialize with PKMS and TaskManager.
+        
+        Args:
+            pkms: PKMS instance
+            task_manager: TaskManager instance
+        """
+        self.pkms = pkms
+        self.task_manager = task_manager
+        
+        # Initialize OpenAI client
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            print("\nWARNING: OPENAI_API_KEY not found in environment.")
+            print("AI-powered knowledge assistant will not work.")
+            print("See OPENAI_SETUP.md for instructions.")
+            sys.exit(1)
+        
+        try:
+            self.openai_client = OpenAI(api_key=api_key)
+        except Exception as e:
+            print(f"\nERROR: Failed to initialize OpenAI client: {e}")
+            sys.exit(1)
+    
+    def ask(self, question: str) -> str:
+        """Answer a question using knowledge from notes and tasks.
+        
+        Args:
+            question: User's question
+            
+        Returns:
+            AI-generated answer
+        """
+        try:
+            return self._answer_with_ai(question)
+        except Exception as e:
+            print(f"\nERROR: OpenAI API call failed: {e}")
+            print("Please check your API key and internet connection.")
+            raise
+    
+    def _answer_with_ai(self, question: str) -> str:
+        """Use AI with RAG to answer question.
+        
+        Args:
+            question: User's question
+            
+        Returns:
+            AI answer based on available knowledge
+        """
+        # Gather context from notes and tasks
+        notes = self.pkms.list_notes()
+        tasks = self.task_manager.list_tasks()
+        
+        # Prepare context (limit to avoid token limits)
+        notes_context = []
+        for note in notes[:10]:
+            ctx = f"\n- {note['title']}"
+            if note.get('tags'):
+                ctx += f" [Tags: {', '.join(note['tags'])}]"
+            if note.get('content'):
+                ctx += f"\n  {note['content'][:300]}..."
+            notes_context.append(ctx)
+        
+        tasks_context = []
+        for task in tasks[:10]:
+            ctx = f"\n- {task['title']} (Status: {task['status']}, Priority: {task.get('priority', 'N/A')})"
+            if task.get('due_date'):
+                ctx += f", Due: {task['due_date']}"
+            if task.get('description'):
+                ctx += f"\n  {task['description'][:200]}..."
+            tasks_context.append(ctx)
+        
+        prompt = f"""Answer this question based on the user's notes and tasks.
+
+QUESTION: {question}
+
+AVAILABLE NOTES:
+{''.join(notes_context) if notes_context else 'No notes available'}
+
+TASKS:
+{''.join(tasks_context) if tasks_context else 'No tasks available'}
+
+Provide a helpful, accurate answer based on the available information. If the information isn't sufficient, say so."""
+
+        response = self.openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are a helpful study assistant that answers questions based on the user's notes and tasks."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.6,
+            max_tokens=500
+        )
+        
+        return response.choices[0].message.content.strip()
+
+
+class NoteExpander:
+    """Agent that helps expand and improve note content."""
+    
+    def __init__(self, pkms: PKMS):
+        """Initialize with PKMS instance.
+        
+        Args:
+            pkms: PKMS instance
+        """
+        self.pkms = pkms
+        
+        # Initialize OpenAI client
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            print("\nWARNING: OPENAI_API_KEY not found in environment.")
+            print("AI-powered note expansion will not work.")
+            print("See OPENAI_SETUP.md for instructions.")
+            sys.exit(1)
+        
+        try:
+            self.openai_client = OpenAI(api_key=api_key)
+        except Exception as e:
+            print(f"\nERROR: Failed to initialize OpenAI client: {e}")
+            sys.exit(1)
+    
+    def expand_note(self, note_id: int, instruction: str = "expand") -> str:
+        """Expand or improve a note based on instruction.
+        
+        Args:
+            note_id: ID of the note
+            instruction: What to do (expand, clarify, add examples, etc.)
+            
+        Returns:
+            Improved note content
+        """
+        note = self.pkms.get_note(note_id)
+        if not note:
+            return "Note not found."
+        
+        content = note.get('content', '')
+        if not content:
+            return "Note has no content to expand."
+        
+        try:
+            return self._expand_with_ai(note, instruction)
+        except Exception as e:
+            print(f"\nERROR: OpenAI API call failed: {e}")
+            print("Please check your API key and internet connection.")
+            raise
+    
+    def _expand_with_ai(self, note: Dict, instruction: str) -> str:
+        """Use AI to expand/improve note content.
+        
+        Args:
+            note: Note dictionary
+            instruction: Improvement instruction
+            
+        Returns:
+            Improved content
+        """
+        title = note['title']
+        content = note.get('content', '')
+        tags = ', '.join(note.get('tags', []))
+        
+        instruction_map = {
+            'expand': 'Expand this note with more detail and explanation',
+            'clarify': 'Clarify and improve the explanation in this note',
+            'examples': 'Add practical examples to this note',
+            'simplify': 'Simplify and make this note easier to understand'
+        }
+        
+        prompt_instruction = instruction_map.get(instruction, instruction)
+        
+        prompt = f"""{prompt_instruction}:
+
+Title: {title}
+Tags: {tags if tags else 'None'}
+
+Current Content:
+{content}
+
+Provide improved content that maintains the original meaning while being more helpful for studying."""
+
+        response = self.openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are a helpful study assistant that improves study notes while maintaining accuracy."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7,
+            max_tokens=800
+        )
+        
+        return response.choices[0].message.content.strip()

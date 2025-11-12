@@ -17,13 +17,26 @@ A terminal-based study assistant that combines Personal Knowledge Management (PK
 - View overdue and upcoming tasks
 - Get task statistics and completion rates
 
-### 🤖 AI Agents
-- **Link Suggester**: Automatically suggests related notes based on content similarity
-- **Tag Suggester**: Recommends relevant tags based on note content
-- **Study Planner**: Uses OpenAI GPT-3.5 to generate intelligent weekly study plans
-- **Summary Generator**: Creates concise summaries of your notes
+### 🤖 AI Agents (Powered by OpenAI GPT-4o-mini)
 
-**IMPORTANT:** OpenAI API key is required for planning features (`plan week`, `plan today`). See [OPENAI_SETUP.md](OPENAI_SETUP.md) for setup instructions.
+**ALL AI features require an OpenAI API key.** See [OPENAI_SETUP.md](OPENAI_SETUP.md) for setup instructions.
+
+#### Intelligent Note Management
+- **AI Summary Generator**: Creates intelligent, abstractive summaries of your notes
+- **Semantic Link Suggester**: Finds conceptual relationships between notes with AI reasoning
+- **AI Tag Suggester**: Generates contextually relevant tags based on note content
+- **Semantic Search**: Natural language search - find notes by meaning, not just keywords
+
+#### Study Assistance
+- **AI Study Planner**: Generates balanced weekly study plans considering priorities and deadlines
+- **Daily Recommendations**: AI-powered task prioritization for optimal productivity
+- **Quiz Generator**: Creates practice questions (multiple choice, true/false, short answer)
+- **Knowledge Assistant**: RAG-powered Q&A about your notes and tasks
+
+#### Content Enhancement
+- **Note Expander**: AI-assisted content improvement (expand, clarify, add examples, simplify)
+
+**All AI features work together to create a powerful, intelligent study companion!**
 
 ### 💾 Data Storage
 - Uses JSON files for simple, portable storage
