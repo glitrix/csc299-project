@@ -903,7 +903,7 @@ Make questions test understanding, not just memorization."""
                 {"role": "user", "content": prompt}
             ],
             temperature=0.7,
-            max_tokens=800
+            max_tokens=2000  # Increased to handle more questions (20+ questions need ~1500-2000 tokens)
         )
         
         ai_response = response.choices[0].message.content
