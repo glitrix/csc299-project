@@ -1,0 +1,75 @@
+# Quiz Command Truncation Fix
+Date: November 12, 2025
+
+## Issue
+When running the quiz command with 20 questions, the generation broke at question 17:
+
+```
+studypal> quiz 2 --num 20
+
+📝 Generating 20 quiz questions...
+
+AI Response - Quiz Questions:
+======================================================================
+[Questions 1-16 generated successfully]
+...
+Q17: True or False: A tree can have more than two children per
+Type: N/A
+Answer: N/A
+----------------------------------------------------------------------
+```
+
+The response was truncated mid-sentence, leaving question 17 incomplete and questions 18-20 missing.
+
+## Root Cause
+The issue was in `src/studypal/agents.py` in the `_generate_quiz_with_ai` method.
+
+**Problem:**
+- The `max_tokens` parameter was set to 800
+- Each quiz question (with type, options, and answer) takes approximately 40-80 tokens
+- 20 questions require roughly 800-1600 tokens
+- The OpenAI API response was being cut off at the 800 token limit
+- This happened in the middle of generating question 17
+
+**Code Location:** `FinalProject/src/studypal/agents.py`, line 906
+
+## Solution
+Increased the `max_tokens` parameter from 800 to 2000 in the OpenAI API call.
+
+**Changed:**
+```python
+response = self.openai_client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[
+        {"role": "system", "content": "You are a helpful tutor that creates effective quiz questions to test student understanding."},
+        {"role": "user", "content": prompt}
+    ],
+    temperature=0.7,
+    max_tokens=800  # OLD: Too small for 20 questions
+)
+```
+
+**To:**
+```python
+response = self.openai_client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[
+        {"role": "system", "content": "You are a helpful tutor that creates effective quiz questions to test student understanding."},
+        {"role": "user", "content": prompt}
+    ],
+    temperature=0.7,
+    max_tokens=2000  # NEW: Increased to handle more questions (20+ questions need ~1500-2000 tokens)
+)
+```
+
+## Benefits
+- Can now generate 20+ quiz questions without truncation
+- Provides buffer room for longer questions with detailed options
+- Handles AI formatting variations
+- Supports up to 25-30 questions comfortably
+
+## Testing
+After the fix, running `quiz 2 --num 20` should generate all 20 questions completely without being cut off.
+
+## Files Modified
+- `FinalProject/src/studypal/agents.py` - Increased max_tokens in QuizGenerator._generate_quiz_with_ai method
