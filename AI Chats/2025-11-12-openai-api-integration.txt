@@ -1,0 +1,177 @@
+# AI Chat: OpenAI API Integration for StudyPal
+Date: November 12, 2025
+
+## Initial Question
+User: Does my current code use an API key?
+
+## Response
+Assistant confirmed that the current code does NOT use an API key. Analysis showed:
+- No OpenAI API integration in the actual code
+- Only mentions of OPENAI_API_KEY were in Requirements.md documentation
+- No OpenAI dependency in requirements.txt
+- All "AI agents" were actually rule-based algorithms working locally:
+  - LinkSuggester: Uses keyword extraction and Jaccard similarity
+  - TagSuggester: Uses keyword frequency matching
+  - StudyPlanner: Uses priority and due date sorting
+  - SummaryGenerator: Uses simple sentence extraction
+- Application works completely offline without any API keys
+
+## Follow-up Request
+User: Can you update the code to where it uses an API key as an environmental variable for the commands like plan week, plan today, etc.
+
+## Implementation Summary
+
+### Files Modified:
+
+1. **requirements.txt**
+   - Added: openai>=1.0.0
+   - Added: python-dotenv>=1.0.0
+
+2. **src/studypal/agents.py**
+   - Added OpenAI import with fallback handling
+   - Updated StudyPlanner class to initialize OpenAI client if API key is available
+   - Refactored plan_week() to use AI when available:
+     - _plan_week_with_ai() - Uses OpenAI GPT-3.5-turbo for intelligent scheduling
+     - _plan_week_basic() - Original rule-based planning (fallback)
+     - _parse_ai_plan() - Parses AI-generated text into structured format
+   - Enhanced suggest_daily_schedule() with AI:
+     - _suggest_daily_with_ai() - Uses OpenAI for intelligent task prioritization
+   - Both methods gracefully fall back to basic planning on API errors
+
+3. **src/studypal/__main__.py**
+   - Added python-dotenv import to load environment variables
+   - Automatically loads .env file on startup
+
+4. **.gitignore**
+   - Added .env to prevent committing API keys to version control
+
+5. **README.md**
+   - Updated AI Agents section to mention OpenAI integration
+   - Added link to OPENAI_SETUP.md
+   - Updated installation instructions
+
+6. **QUICKSTART.md**
+   - Added step for installing dependencies
+   - Added optional step for OpenAI API setup
+   - Added notes about AI-enhanced features on plan week and plan today commands
+
+### New Files Created:
+
+1. **.env.example**
+   - Template for environment variables
+   - Contains OPENAI_API_KEY placeholder with instructions
+
+2. **OPENAI_SETUP.md**
+   - Complete guide for obtaining OpenAI API key
+   - Three setup options (.env file, environment variable, system variable)
+   - Verification instructions
+   - Troubleshooting section
+   - API usage and cost information
+   - Privacy and security information
+   - Comparison of features with/without API
+
+3. **check_openai.py**
+   - Utility script to verify OpenAI configuration
+   - Checks for required packages
+   - Validates API key
+   - Makes test API call to confirm connectivity
+
+4. **tests/test_openai.py**
+   - Tests for planning without API key (basic mode)
+   - Tests for planning with API key (AI mode)
+   - Tests for error handling and fallback behavior
+   - Tests automatically skip if API key not configured
+
+5. **OPENAI_INTEGRATION_SUMMARY.md**
+   - Detailed summary of all changes
+   - Setup instructions
+   - Cost estimates
+   - Security considerations
+   - Backwards compatibility notes
+
+## Key Features Implemented:
+
+### Enhanced Commands:
+- **plan week**: Uses OpenAI to generate intelligent weekly schedules considering task context, relationships, and optimal distribution
+- **plan today**: Uses OpenAI for smart daily task prioritization with reasoning
+
+### Graceful Fallback:
+- System works perfectly without API key (uses original rule-based planning)
+- Automatically falls back on API errors
+- No breaking changes to existing functionality
+
+### Security:
+- API key stored in .env file (not committed to git)
+- Environment variable support
+- No data permanently stored by OpenAI
+
+### Cost:
+- plan week: ~$0.002-0.003 per request
+- plan today: ~$0.001-0.002 per request
+- Estimated monthly cost: <$1 for typical usage
+
+## Setup Instructions Provided:
+
+1. Install dependencies:
+   ```powershell
+   cd FinalProject
+   pip install -r requirements.txt
+   ```
+
+2. Get OpenAI API key from https://platform.openai.com/api-keys
+
+3. Create .env file:
+   ```powershell
+   Copy-Item .env.example .env
+   ```
+
+4. Add API key to .env file:
+   ```
+   OPENAI_API_KEY=sk-your-actual-key-here
+   ```
+
+5. Verify setup (optional):
+   ```powershell
+   py check_openai.py
+   ```
+
+6. Run StudyPal:
+   ```powershell
+   py -m src.studypal
+   ```
+
+## Technical Implementation Details:
+
+### OpenAI Integration Pattern:
+- Check if openai package is available (OPENAI_AVAILABLE flag)
+- Check if API key is set in environment
+- Initialize OpenAI client in StudyPlanner.__init__()
+- Attempt AI-enhanced planning in try-catch blocks
+- Fall back to basic planning on any errors
+- Print error messages to inform user of fallback
+
+### AI Prompt Engineering:
+For plan_week:
+- Sends task information (title, priority, due date, description)
+- Includes available notes for context
+- Requests balanced weekly schedule with specific format
+- Uses gpt-3.5-turbo model with temperature 0.7
+
+For plan_today:
+- Sends candidate tasks with full details
+- Requests top 5 prioritized tasks with reasoning
+- Uses temperature 0.5 for more consistent results
+- Extracts task IDs from response for reordering
+
+### Backwards Compatibility:
+✅ All existing functionality works without changes
+✅ No migration required for data files
+✅ Commands work identically with or without API key
+✅ Tests pass with or without API configuration
+
+## Final Notes:
+- Implementation maintains StudyPal's offline-first philosophy
+- OpenAI integration is purely optional enhancement
+- No user experience degradation without API key
+- Comprehensive documentation provided for setup
+- All code changes follow existing patterns and style
