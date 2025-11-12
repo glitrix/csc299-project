@@ -1,0 +1,63 @@
+# AI Chat Log - November 12, 2025
+# Topic: OpenAI Package Installation and Model Update
+
+## Issue: OpenAI Package Not Installed
+
+User: I thought this is all done already
+
+Context: User ran `py studypal.py` in Git Bash and got error:
+```
+ERROR: OpenAI package is required but not installed.
+Please run: pip install -r requirements.txt
+```
+
+AI Response:
+- Checked requirements.txt - confirmed openai>=1.0.0 was listed
+- Attempted to check if pip/python was available in PowerShell
+- Found that Python wasn't properly configured in PowerShell
+- Used `py -m pip install -r requirements.txt` command instead
+
+Result: Successfully installed:
+- openai-2.7.2
+- python-dotenv-1.2.1
+- All dependencies (pytest, httpx, pydantic, etc.)
+
+Note: Packages existed in requirements.txt but hadn't been installed into the Python environment yet.
+
+---
+
+## Question: What Model is the AI Using?
+
+User: what model is the ai using?
+
+AI Response:
+- Searched for model references in agents.py
+- Found model="gpt-3.5-turbo" in two locations
+- Informed user that GPT-3.5-Turbo was being used
+
+---
+
+## Request: Change to GPT-4o-mini
+
+User: use gpt-4o-mini
+
+AI Action:
+- Located both instances of model="gpt-3.5-turbo" in agents.py
+- Updated line 282: Changed to model="gpt-4o-mini" (study planning assistant)
+- Updated line 417: Changed to model="gpt-4o-mini" (productivity/prioritization assistant)
+
+Result: Successfully updated both API calls to use GPT-4o-mini model
+
+Benefits: GPT-4o-mini is more advanced and capable while still being cost-effective
+
+---
+
+## Files Modified:
+1. c:\Users\joshk\CSC299\csc299-project\FinalProject\src\studypal\agents.py
+   - Line 282: model="gpt-3.5-turbo" → model="gpt-4o-mini"
+   - Line 417: model="gpt-3.5-turbo" → model="gpt-4o-mini"
+
+## Summary:
+- Installed missing OpenAI package and dependencies
+- Updated AI model from GPT-3.5-Turbo to GPT-4o-mini
+- Application is now ready to run with improved AI capabilities
