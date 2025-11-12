@@ -5,6 +5,13 @@ import os
 from pathlib import Path
 from .cli import CLI
 
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass  # dotenv not required if env vars set manually
+
 
 def main():
     """Main entry point for StudyPal."""

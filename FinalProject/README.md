@@ -20,13 +20,15 @@ A terminal-based study assistant that combines Personal Knowledge Management (PK
 ### 🤖 AI Agents
 - **Link Suggester**: Automatically suggests related notes based on content similarity
 - **Tag Suggester**: Recommends relevant tags based on note content
-- **Study Planner**: Generates weekly study plans based on your tasks and priorities
+- **Study Planner**: Generates weekly study plans (enhanced with OpenAI API if configured)
 - **Summary Generator**: Creates concise summaries of your notes
+
+**NEW:** Optional OpenAI API integration for enhanced planning features! See [OPENAI_SETUP.md](OPENAI_SETUP.md) for details.
 
 ### 💾 Data Storage
 - Uses JSON files for simple, portable storage
 - All data stored locally in `data/` directory
-- No internet connection required (works 100% offline)
+- Works offline (OpenAI API is optional)
 
 ## Installation
 
@@ -42,10 +44,14 @@ A terminal-based study assistant that combines Personal Knowledge Management (PK
 cd FinalProject
 ```
 
-3. Install dependencies (optional, only needed for development):
+3. Install dependencies:
 ```powershell
 pip install -r requirements.txt
 ```
+
+4. **(Optional) Enable AI-powered planning:**
+   - See [OPENAI_SETUP.md](OPENAI_SETUP.md) for instructions
+   - StudyPal works great without an API key!
 
 ## Usage
 

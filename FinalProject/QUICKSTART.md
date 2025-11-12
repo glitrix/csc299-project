@@ -7,14 +7,23 @@
    cd FinalProject
    ```
 
-2. **Verify installation:**
+2. **Install dependencies:**
+   ```powershell
+   pip install -r requirements.txt
+   ```
+
+3. **(Optional) Enable AI-powered planning:**
+   - See [OPENAI_SETUP.md](OPENAI_SETUP.md) for setup instructions
+   - Not required - StudyPal works great without it!
+
+4. **Verify installation:**
    ```powershell
    py verify.py
    ```
    
    You should see all tests pass with green checkmarks.
 
-3. **Start StudyPal:**
+5. **Start StudyPal:**
    ```powershell
    py -m src.studypal
    ```
@@ -67,6 +76,7 @@ show note 1
 ```
 plan week
 ```
+*Note: With OpenAI API configured, this uses AI for smarter scheduling!*
 
 ### 10. Get Task Statistics
 ```
@@ -82,6 +92,7 @@ search notes "python"
 ```
 plan today
 ```
+*Note: With OpenAI API configured, this uses AI for intelligent prioritization!*
 
 ## Common Commands Quick Reference
 

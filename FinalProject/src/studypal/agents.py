@@ -9,6 +9,13 @@ from .storage import Storage
 from .pkms import PKMS
 from .tasks import TaskManager
 
+# OpenAI integration
+try:
+    from openai import OpenAI
+    OPENAI_AVAILABLE = True
+except ImportError:
+    OPENAI_AVAILABLE = False
+
 
 class LinkSuggester:
     """Agent that suggests links between notes based on content analysis."""
@@ -182,6 +189,13 @@ class StudyPlanner:
         """
         self.task_manager = task_manager
         self.pkms = pkms
+        
+        # Initialize OpenAI client if API key is available
+        self.openai_client = None
+        if OPENAI_AVAILABLE:
+            api_key = os.getenv("OPENAI_API_KEY")
+            if api_key:
+                self.openai_client = OpenAI(api_key=api_key)
     
     def plan_week(self) -> Dict[str, List[Dict]]:
         """Create a weekly study plan based on tasks and deadlines.
@@ -194,6 +208,26 @@ class StudyPlanner:
         in_progress = self.task_manager.list_tasks(status="in_progress")
         all_tasks = todo_tasks + in_progress
         
+        # If OpenAI is available, use it to generate enhanced plan
+        if self.openai_client and all_tasks:
+            try:
+                return self._plan_week_with_ai(all_tasks)
+            except Exception as e:
+                print(f"OpenAI API error, falling back to basic planning: {e}")
+                # Fall through to basic planning
+        
+        # Basic planning (fallback or when no OpenAI)
+        return self._plan_week_basic(all_tasks)
+    
+    def _plan_week_basic(self, all_tasks: List[Dict]) -> Dict[str, List[Dict]]:
+        """Basic weekly planning without AI.
+        
+        Args:
+            all_tasks: List of tasks to plan
+            
+        Returns:
+            Dictionary mapping day names to lists of planned activities
+        """
         # Sort by priority (highest first) and due date
         def task_sort_key(task):
             due_date = task.get('due_date', '9999-12-31')
@@ -245,6 +279,126 @@ class StudyPlanner:
         
         return plan
     
+    def _plan_week_with_ai(self, all_tasks: List[Dict]) -> Dict[str, List[Dict]]:
+        """Create weekly plan using OpenAI for intelligent scheduling.
+        
+        Args:
+            all_tasks: List of tasks to plan
+            
+        Returns:
+            Dictionary mapping day names to lists of planned activities
+        """
+        # Prepare task information for AI
+        task_info = []
+        for task in all_tasks:
+            info = f"Task: {task['title']}, Priority: {task.get('priority', 1)}"
+            if task.get('due_date'):
+                info += f", Due: {task['due_date']}"
+            if task.get('description'):
+                info += f", Description: {task['description']}"
+            task_info.append(info)
+        
+        # Get notes for context
+        notes = self.pkms.list_notes()
+        note_titles = [note['title'] for note in notes[:10]]  # Limit to 10 notes
+        
+        # Create prompt for AI
+        prompt = f"""Create an optimal weekly study plan for the following tasks and notes.
+        
+Tasks to schedule:
+{chr(10).join(task_info)}
+
+Available study notes: {', '.join(note_titles) if note_titles else 'None'}
+
+Please create a balanced weekly schedule (Monday-Sunday) that:
+1. Prioritizes tasks by priority and due date
+2. Distributes workload evenly across the week
+3. Estimates study hours for each task (1-3 hours based on priority)
+4. Includes note review sessions on lighter days
+5. Keeps weekdays busier than weekends
+
+Respond in this exact format:
+Monday:
+- Task Name (Xh) [Priority]
+Tuesday:
+- Task Name (Xh) [Priority]
+...
+
+Keep it concise and practical."""
+
+        # Call OpenAI API
+        response = self.openai_client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are a helpful study planning assistant. Create practical, balanced study schedules."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7,
+            max_tokens=800
+        )
+        
+        ai_plan_text = response.choices[0].message.content
+        
+        # Parse AI response into structured plan
+        return self._parse_ai_plan(ai_plan_text, all_tasks, notes)
+    
+    def _parse_ai_plan(self, ai_text: str, tasks: List[Dict], notes: List[Dict]) -> Dict[str, List[Dict]]:
+        """Parse AI-generated plan text into structured format.
+        
+        Args:
+            ai_text: AI-generated plan text
+            tasks: List of all tasks
+            notes: List of all notes
+            
+        Returns:
+            Structured plan dictionary
+        """
+        days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        plan = {day: [] for day in days}
+        
+        current_day = None
+        lines = ai_text.split('\n')
+        
+        # Create task lookup by title
+        task_lookup = {task['title'].lower(): task for task in tasks}
+        
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+            
+            # Check if line is a day header
+            for day in days:
+                if day in line and ':' in line:
+                    current_day = day
+                    break
+            
+            # Parse task/activity lines
+            if current_day and line.startswith('-'):
+                # Try to extract task info
+                # Look for patterns like "Task Name (2h) [P4]"
+                task_match = re.search(r'-\s*(.+?)\s*\((\d+(?:\.\d+)?)h\)', line)
+                if task_match:
+                    task_name = task_match.group(1).strip()
+                    hours = float(task_match.group(2))
+                    
+                    # Try to find matching task
+                    task_name_lower = task_name.lower().replace('[', '').replace(']', '').strip()
+                    for title, task in task_lookup.items():
+                        if title in task_name_lower or task_name_lower in title:
+                            plan[current_day].append({
+                                'task': task,
+                                'estimated_hours': hours,
+                                'type': 'task'
+                            })
+                            break
+        
+        # Fallback to basic plan if parsing failed
+        if all(len(activities) == 0 for activities in plan.values()):
+            return self._plan_week_basic(tasks)
+        
+        return plan
+    
     def suggest_daily_schedule(self) -> List[Dict]:
         """Suggest tasks for today based on due dates and priorities.
         
@@ -267,11 +421,83 @@ class StudyPlanner:
                 task_ids.add(task['id'])
                 daily_tasks.append(task)
         
+        # If OpenAI is available, get AI recommendations
+        if self.openai_client and daily_tasks:
+            try:
+                return self._suggest_daily_with_ai(daily_tasks)
+            except Exception as e:
+                print(f"OpenAI API error, falling back to basic recommendations: {e}")
+                # Fall through to basic recommendations
+        
         # Sort by priority and due date
         # Use empty string for None due_date to handle comparison properly
         daily_tasks.sort(key=lambda t: (t.get('due_date') or '9999-12-31', -t.get('priority', 1)))
         
         return daily_tasks[:5]  # Return top 5 tasks
+    
+    def _suggest_daily_with_ai(self, tasks: List[Dict]) -> List[Dict]:
+        """Use AI to suggest optimal daily schedule.
+        
+        Args:
+            tasks: List of candidate tasks
+            
+        Returns:
+            Ordered list of recommended tasks
+        """
+        # Prepare task information
+        task_info = []
+        for task in tasks:
+            info = f"ID {task['id']}: {task['title']}, Priority: {task.get('priority', 1)}"
+            if task.get('due_date'):
+                info += f", Due: {task['due_date']}"
+            if task.get('description'):
+                info += f", Desc: {task['description']}"
+            task_info.append(info)
+        
+        prompt = f"""Given these tasks, recommend the top 5 tasks to focus on today.
+Consider priority, due dates, and task descriptions.
+
+Tasks:
+{chr(10).join(task_info)}
+
+Respond with task IDs in order of importance, one per line, like:
+1. ID X - Brief reason
+2. ID Y - Brief reason
+..."""
+
+        response = self.openai_client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are a productivity assistant helping prioritize daily tasks."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.5,
+            max_tokens=300
+        )
+        
+        ai_response = response.choices[0].message.content
+        
+        # Extract task IDs from AI response
+        recommended_ids = []
+        for line in ai_response.split('\n'):
+            match = re.search(r'ID\s+(\d+)', line)
+            if match:
+                recommended_ids.append(int(match.group(1)))
+        
+        # Reorder tasks based on AI recommendations
+        task_dict = {task['id']: task for task in tasks}
+        recommended_tasks = []
+        
+        for task_id in recommended_ids:
+            if task_id in task_dict:
+                recommended_tasks.append(task_dict[task_id])
+        
+        # Add any remaining tasks
+        for task in tasks:
+            if task not in recommended_tasks:
+                recommended_tasks.append(task)
+        
+        return recommended_tasks[:5]
 
 
 class SummaryGenerator:
