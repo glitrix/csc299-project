@@ -2,6 +2,7 @@
 
 from typing import List
 from datetime import datetime
+import textwrap
 
 
 def parse_tags(tags_str: str) -> List[str]:
@@ -72,3 +73,31 @@ def truncate_text(text: str, max_length: int = 50) -> str:
     if len(text) <= max_length:
         return text
     return text[:max_length-3] + "..."
+
+
+def wrap_text(text: str, width: int = 70) -> str:
+    """Wrap text to specified width, preserving paragraphs.
+    
+    Args:
+        text: Text to wrap
+        width: Maximum line width
+        
+    Returns:
+        Wrapped text with proper line breaks
+    """
+    if not text:
+        return text
+    
+    # Split into paragraphs (preserve intentional line breaks)
+    paragraphs = text.split('\n')
+    
+    # Wrap each paragraph
+    wrapped_paragraphs = []
+    for paragraph in paragraphs:
+        if paragraph.strip():  # Skip empty lines
+            wrapped = textwrap.fill(paragraph, width=width)
+            wrapped_paragraphs.append(wrapped)
+        else:
+            wrapped_paragraphs.append('')  # Preserve empty lines
+    
+    return '\n'.join(wrapped_paragraphs)

@@ -8,7 +8,7 @@ from .pkms import PKMS
 from .tasks import TaskManager
 from .agents import (LinkSuggester, TagSuggester, StudyPlanner, SummaryGenerator,
                       SemanticSearchAgent, QuizGenerator, KnowledgeAssistant, NoteExpander)
-from .utils import parse_tags, format_date, truncate_text
+from .utils import parse_tags, format_date, truncate_text, wrap_text
 
 
 class CLI:
@@ -692,7 +692,7 @@ GENERAL:
         summary = self.summary_generator.generate_summary(note_id)
         print(f"\nAI Response - Summary of note #{note_id}:")
         print("-" * 70)
-        print(summary)
+        print(wrap_text(summary))
         print("-" * 70)
     
     def cmd_stats(self, args: List[str]):
@@ -723,7 +723,7 @@ GENERAL:
             answer = self.knowledge_assistant.ask(question)
             print("🤖 AI Response:")
             print("=" * 70)
-            print(answer)
+            print(wrap_text(answer))
             print("=" * 70)
         except Exception as e:
             print(f"Sorry, I couldn't answer that question. Error: {e}")
@@ -791,7 +791,7 @@ GENERAL:
             
             print("AI Response - Improved Content:")
             print("=" * 70)
-            print(improved_content)
+            print(wrap_text(improved_content))
             print("=" * 70)
             print("\nTo save this, use: update note <id> --content \"<paste content>\"")
         except Exception as e:
