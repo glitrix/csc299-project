@@ -1,6 +1,7 @@
 """AI Agents module for StudyPal - provides intelligent assistance."""
 
 import os
+import sys
 from typing import List, Dict, Optional
 from collections import Counter
 import re
@@ -9,12 +10,13 @@ from .storage import Storage
 from .pkms import PKMS
 from .tasks import TaskManager
 
-# OpenAI integration
+# OpenAI integration - REQUIRED
 try:
     from openai import OpenAI
-    OPENAI_AVAILABLE = True
 except ImportError:
-    OPENAI_AVAILABLE = False
+    print("ERROR: OpenAI package is required but not installed.")
+    print("Please run: pip install -r requirements.txt")
+    sys.exit(1)
 
 
 class LinkSuggester:
@@ -190,15 +192,22 @@ class StudyPlanner:
         self.task_manager = task_manager
         self.pkms = pkms
         
-        # Initialize OpenAI client if API key is available
-        self.openai_client = None
-        if OPENAI_AVAILABLE:
-            api_key = os.getenv("OPENAI_API_KEY")
-            if api_key:
-                self.openai_client = OpenAI(api_key=api_key)
+        # Initialize OpenAI client - REQUIRED
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            print("\nERROR: OPENAI_API_KEY environment variable is not set!")
+            print("Please set your OpenAI API key in the .env file.")
+            print("See OPENAI_SETUP.md for instructions.")
+            sys.exit(1)
+        
+        try:
+            self.openai_client = OpenAI(api_key=api_key)
+        except Exception as e:
+            print(f"\nERROR: Failed to initialize OpenAI client: {e}")
+            sys.exit(1)
     
     def plan_week(self) -> Dict[str, List[Dict]]:
-        """Create a weekly study plan based on tasks and deadlines.
+        """Create a weekly study plan based on tasks and deadlines using AI.
         
         Returns:
             Dictionary mapping day names to lists of planned activities
@@ -208,76 +217,18 @@ class StudyPlanner:
         in_progress = self.task_manager.list_tasks(status="in_progress")
         all_tasks = todo_tasks + in_progress
         
-        # If OpenAI is available, use it to generate enhanced plan
-        if self.openai_client and all_tasks:
-            try:
-                return self._plan_week_with_ai(all_tasks)
-            except Exception as e:
-                print(f"OpenAI API error, falling back to basic planning: {e}")
-                # Fall through to basic planning
+        if not all_tasks:
+            # No tasks to plan
+            days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+            return {day: [] for day in days}
         
-        # Basic planning (fallback or when no OpenAI)
-        return self._plan_week_basic(all_tasks)
-    
-    def _plan_week_basic(self, all_tasks: List[Dict]) -> Dict[str, List[Dict]]:
-        """Basic weekly planning without AI.
-        
-        Args:
-            all_tasks: List of tasks to plan
-            
-        Returns:
-            Dictionary mapping day names to lists of planned activities
-        """
-        # Sort by priority (highest first) and due date
-        def task_sort_key(task):
-            due_date = task.get('due_date', '9999-12-31')
-            priority = task.get('priority', 1)
-            return (due_date, -priority)
-        
-        all_tasks.sort(key=task_sort_key)
-        
-        # Create 7-day plan
-        days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-        plan = {day: [] for day in days}
-        
-        # Distribute tasks across the week
-        # Priority 5 and 4 tasks get more time
-        task_index = 0
-        for day_index, day in enumerate(days):
-            # Add 2-3 tasks per day, prioritizing high priority tasks
-            tasks_for_day = 0
-            max_tasks = 3 if day_index < 5 else 2  # More tasks on weekdays
-            
-            while task_index < len(all_tasks) and tasks_for_day < max_tasks:
-                task = all_tasks[task_index]
-                
-                # Estimate time based on priority
-                priority = task.get('priority', 2)
-                estimated_hours = 3 if priority >= 4 else 2 if priority >= 3 else 1
-                
-                plan[day].append({
-                    'task': task,
-                    'estimated_hours': estimated_hours,
-                    'type': 'task'
-                })
-                
-                tasks_for_day += 1
-                task_index += 1
-        
-        # Add review time for notes (on days with lighter task load)
-        notes = self.pkms.list_notes()
-        if notes:
-            for day in days:
-                if len(plan[day]) < 2:  # Days with fewer tasks
-                    # Suggest reviewing a note
-                    note_index = days.index(day) % len(notes)
-                    plan[day].append({
-                        'note': notes[note_index],
-                        'estimated_hours': 0.5,
-                        'type': 'review'
-                    })
-        
-        return plan
+        # Always use AI planning
+        try:
+            return self._plan_week_with_ai(all_tasks)
+        except Exception as e:
+            print(f"\nERROR: OpenAI API call failed: {e}")
+            print("Please check your API key and internet connection.")
+            raise
     
     def _plan_week_with_ai(self, all_tasks: List[Dict]) -> Dict[str, List[Dict]]:
         """Create weekly plan using OpenAI for intelligent scheduling.
@@ -393,14 +344,14 @@ Keep it concise and practical."""
                             })
                             break
         
-        # Fallback to basic plan if parsing failed
+        # If parsing failed, raise error
         if all(len(activities) == 0 for activities in plan.values()):
-            return self._plan_week_basic(tasks)
+            raise ValueError("Failed to parse AI-generated plan. Please try again.")
         
         return plan
     
     def suggest_daily_schedule(self) -> List[Dict]:
-        """Suggest tasks for today based on due dates and priorities.
+        """Suggest tasks for today using AI-powered prioritization.
         
         Returns:
             List of tasks recommended for today
@@ -421,19 +372,16 @@ Keep it concise and practical."""
                 task_ids.add(task['id'])
                 daily_tasks.append(task)
         
-        # If OpenAI is available, get AI recommendations
-        if self.openai_client and daily_tasks:
-            try:
-                return self._suggest_daily_with_ai(daily_tasks)
-            except Exception as e:
-                print(f"OpenAI API error, falling back to basic recommendations: {e}")
-                # Fall through to basic recommendations
+        if not daily_tasks:
+            return []
         
-        # Sort by priority and due date
-        # Use empty string for None due_date to handle comparison properly
-        daily_tasks.sort(key=lambda t: (t.get('due_date') or '9999-12-31', -t.get('priority', 1)))
-        
-        return daily_tasks[:5]  # Return top 5 tasks
+        # Always use AI recommendations
+        try:
+            return self._suggest_daily_with_ai(daily_tasks)
+        except Exception as e:
+            print(f"\nERROR: OpenAI API call failed: {e}")
+            print("Please check your API key and internet connection.")
+            raise
     
     def _suggest_daily_with_ai(self, tasks: List[Dict]) -> List[Dict]:
         """Use AI to suggest optimal daily schedule.

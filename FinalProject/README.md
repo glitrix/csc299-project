@@ -20,15 +20,14 @@ A terminal-based study assistant that combines Personal Knowledge Management (PK
 ### 🤖 AI Agents
 - **Link Suggester**: Automatically suggests related notes based on content similarity
 - **Tag Suggester**: Recommends relevant tags based on note content
-- **Study Planner**: Generates weekly study plans (enhanced with OpenAI API if configured)
+- **Study Planner**: Uses OpenAI GPT-3.5 to generate intelligent weekly study plans
 - **Summary Generator**: Creates concise summaries of your notes
 
-**NEW:** Optional OpenAI API integration for enhanced planning features! See [OPENAI_SETUP.md](OPENAI_SETUP.md) for details.
+**IMPORTANT:** OpenAI API key is required for planning features (`plan week`, `plan today`). See [OPENAI_SETUP.md](OPENAI_SETUP.md) for setup instructions.
 
 ### 💾 Data Storage
 - Uses JSON files for simple, portable storage
 - All data stored locally in `data/` directory
-- Works offline (OpenAI API is optional)
 
 ## Installation
 
@@ -49,9 +48,9 @@ cd FinalProject
 pip install -r requirements.txt
 ```
 
-4. **(Optional) Enable AI-powered planning:**
-   - See [OPENAI_SETUP.md](OPENAI_SETUP.md) for instructions
-   - StudyPal works great without an API key!
+4. **Set up OpenAI API key (REQUIRED):**
+   - See [OPENAI_SETUP.md](OPENAI_SETUP.md) for complete instructions
+   - The `plan week` and `plan today` commands require an OpenAI API key
 
 ## Usage
 

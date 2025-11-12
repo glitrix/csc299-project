@@ -12,9 +12,9 @@
    pip install -r requirements.txt
    ```
 
-3. **(Optional) Enable AI-powered planning:**
+3. **Set up OpenAI API key (REQUIRED for planning features):**
    - See [OPENAI_SETUP.md](OPENAI_SETUP.md) for setup instructions
-   - Not required - StudyPal works great without it!
+   - Required for `plan week` and `plan today` commands
 
 4. **Verify installation:**
    ```powershell
@@ -81,7 +81,7 @@ show note 1
 ```
 plan week
 ```
-*Note: With OpenAI API configured, this uses AI for smarter scheduling!*
+*Note: This uses OpenAI AI for intelligent scheduling! (Requires API key)*
 
 ### 10. Get Task Statistics
 ```
@@ -97,7 +97,7 @@ search notes "python"
 ```
 plan today
 ```
-*Note: With OpenAI API configured, this uses AI for intelligent prioritization!*
+*Note: This uses OpenAI AI for intelligent prioritization! (Requires API key)*
 
 ## Common Commands Quick Reference
 

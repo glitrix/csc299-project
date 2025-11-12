@@ -7,7 +7,7 @@ StudyPal now supports AI-powered planning features using OpenAI's API. The follo
 - `plan week` - Generates an intelligent weekly study schedule
 - `plan today` - Provides AI-powered daily task recommendations
 
-**Note:** StudyPal works without an API key, but will use simpler rule-based planning instead.
+**IMPORTANT:** An OpenAI API key is required to use the `plan week` and `plan today` commands. StudyPal will not start without a valid API key configured.
 
 ## Getting Your OpenAI API Key
 
@@ -85,9 +85,9 @@ For permanent setup:
    ```
 
 3. **What to expect:**
-   - **With API key configured:** You'll get an AI-generated, personalized study plan
-   - **Without API key:** You'll get a basic rule-based plan (still functional!)
-   - **API error:** You'll see an error message and fall back to basic planning
+   - **With valid API key:** You'll get an AI-generated, personalized study plan
+   - **Without API key:** StudyPal will exit with an error message
+   - **Invalid API key:** You'll see an error and the program will not start
 
 ## Troubleshooting
 
@@ -139,25 +139,17 @@ For typical use (5-10 planning requests per day), expect monthly costs of **less
 - Data is not stored by OpenAI (per their API policy)
 - You can revoke your API key anytime in the OpenAI dashboard
 
-## Features with AI vs. Without AI
+## AI-Powered Features
 
-| Feature | With OpenAI API | Without API |
-|---------|----------------|-------------|
-| `plan week` | Intelligent scheduling considering task context, optimal distribution, and study patterns | Rule-based distribution by priority and due date |
-| `plan today` | AI-powered task prioritization with reasoning | Simple sorting by priority and due date |
-| Other features | No difference | No difference |
+StudyPal uses OpenAI GPT-3.5 for the following features:
 
-## Disabling AI Features
+| Feature | Description |
+|---------|-------------|
+| `plan week` | Intelligent scheduling considering task context, optimal distribution, and study patterns |
+| `plan today` | AI-powered task prioritization with reasoning |
+| Other features | Work normally without API calls |
 
-To disable AI features and use only basic planning:
-
-1. Remove the API key from `.env`
-2. Or unset the environment variable:
-   ```powershell
-   Remove-Item Env:\OPENAI_API_KEY
-   ```
-
-StudyPal will automatically use basic planning without any errors.
+**Note:** The `plan week` and `plan today` commands will not work without a valid OpenAI API key. Other features (notes, tasks, links, etc.) work independently.
 
 ## Support
 
