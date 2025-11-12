@@ -544,7 +544,7 @@ GENERAL:
                         reason = result['relevance']
                         tags_str = f"[{', '.join(note.get('tags', []))}]" if note.get('tags') else ""
                         print(f"\n#{note['id']}: {note['title']} {tags_str}")
-                        print(f"  💡 Why: {reason}")
+                        print(f"  💡 AI Response: {reason}")
                     print("=" * 70)
                 elif keyword_results:
                     print("\nNo semantic matches, showing keyword results:")
@@ -619,7 +619,7 @@ GENERAL:
                 tags_str = f"[{', '.join(note.get('tags', []))}]" if note.get('tags') else ""
                 print(f"\n#{note['id']}: {note['title']} {tags_str}")
                 if 'reason' in suggestion:
-                    print(f"  💡 Why: {suggestion['reason']}")
+                    print(f"  💡 AI Response: {suggestion['reason']}")
             print("=" * 70)
         
         elif suggestion_type == "tags":
@@ -628,7 +628,7 @@ GENERAL:
                 print(f"No tag suggestions found for note #{entity_id}.")
                 return
             
-            print(f"\nSuggested tags for note #{entity_id}:")
+            print(f"\nAI Response - Suggested tags for note #{entity_id}:")
             print(", ".join(suggestions))
         
         else:
@@ -644,7 +644,7 @@ GENERAL:
         
         if plan_type == "week":
             plan = self.study_planner.plan_week()
-            print("\nWeekly Study Plan:")
+            print("\nAI Response - Weekly Study Plan:")
             print("=" * 70)
             for day, activities in plan.items():
                 print(f"\n{day}:")
@@ -667,7 +667,7 @@ GENERAL:
                 print("No tasks recommended for today!")
                 return
             
-            print("\nRecommended tasks for today:")
+            print("\nAI Response - Recommended tasks for today:")
             print("-" * 70)
             for task in tasks:
                 due_str = f"(due: {task['due_date']})" if task.get('due_date') else ""
@@ -690,7 +690,7 @@ GENERAL:
             return
         
         summary = self.summary_generator.generate_summary(note_id)
-        print(f"\nSummary of note #{note_id}:")
+        print(f"\nAI Response - Summary of note #{note_id}:")
         print("-" * 70)
         print(summary)
         print("-" * 70)
@@ -721,7 +721,7 @@ GENERAL:
         
         try:
             answer = self.knowledge_assistant.ask(question)
-            print("🤖 Answer:")
+            print("🤖 AI Response:")
             print("=" * 70)
             print(answer)
             print("=" * 70)
@@ -756,7 +756,7 @@ GENERAL:
                 print("Could not generate questions for this note.")
                 return
             
-            print("Quiz Questions:")
+            print("AI Response - Quiz Questions:")
             print("=" * 70)
             for i, q in enumerate(questions, 1):
                 print(f"\nQ{i}: {q.get('question', 'N/A')}")
@@ -789,7 +789,7 @@ GENERAL:
         try:
             improved_content = self.note_expander.expand_note(note_id, mode)
             
-            print("Improved Content:")
+            print("AI Response - Improved Content:")
             print("=" * 70)
             print(improved_content)
             print("=" * 70)
