@@ -25,6 +25,11 @@
 
 5. **Start StudyPal:**
    ```powershell
+   py studypal.py
+   ```
+   
+   Or alternatively:
+   ```powershell
    py -m src.studypal
    ```
 

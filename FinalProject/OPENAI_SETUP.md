@@ -76,7 +76,7 @@ For permanent setup:
 
 1. **Start StudyPal:**
    ```powershell
-   py -m src.studypal
+   py studypal.py
    ```
 
 2. **Try an AI command:**

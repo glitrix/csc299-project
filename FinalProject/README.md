@@ -57,7 +57,12 @@ pip install -r requirements.txt
 
 ### Starting StudyPal
 
-Run StudyPal using Python's module execution:
+**Simple method (Windows):**
+```powershell
+py studypal.py
+```
+
+**Or using module execution:**
 
 **On Windows:**
 ```powershell
