@@ -988,35 +988,31 @@ class KnowledgeAssistant:
         Returns:
             AI answer based on available knowledge
         """
-        # Gather context from notes and tasks (only if conversation history is empty or short)
-        # This prevents adding context on every message once conversation has started
-        needs_context = len(self.conversation_history) == 0
+        # Always gather context from notes and tasks so AI can access current data
+        notes = self.pkms.list_notes()
+        tasks = self.task_manager.list_tasks()
         
-        if needs_context:
-            notes = self.pkms.list_notes()
-            tasks = self.task_manager.list_tasks()
-            
-            # Prepare context (limit to avoid token limits)
-            notes_context = []
-            for note in notes[:10]:
-                ctx = f"\n- {note['title']}"
-                if note.get('tags'):
-                    ctx += f" [Tags: {', '.join(note['tags'])}]"
-                if note.get('content'):
-                    ctx += f"\n  {note['content'][:300]}..."
-                notes_context.append(ctx)
-            
-            tasks_context = []
-            for task in tasks[:10]:
-                ctx = f"\n- {task['title']} (Status: {task['status']}, Priority: {task.get('priority', 'N/A')})"
-                if task.get('due_date'):
-                    ctx += f", Due: {task['due_date']}"
-                if task.get('description'):
-                    ctx += f"\n  {task['description'][:200]}..."
-                tasks_context.append(ctx)
-            
-            # Add context as system message if this is the first question
-            context_message = f"""You are a helpful study assistant that answers questions based on the user's notes and tasks.
+        # Prepare context (limit to avoid token limits)
+        notes_context = []
+        for note in notes[:10]:
+            ctx = f"\n- {note['title']}"
+            if note.get('tags'):
+                ctx += f" [Tags: {', '.join(note['tags'])}]"
+            if note.get('content'):
+                ctx += f"\n  {note['content'][:300]}..."
+            notes_context.append(ctx)
+        
+        tasks_context = []
+        for task in tasks[:10]:
+            ctx = f"\n- {task['title']} (Status: {task['status']}, Priority: {task.get('priority', 'N/A')})"
+            if task.get('due_date'):
+                ctx += f", Due: {task['due_date']}"
+            if task.get('description'):
+                ctx += f"\n  {task['description'][:200]}..."
+            tasks_context.append(ctx)
+        
+        # Always include context in system message
+        context_message = f"""You are a helpful study assistant that answers questions based on the user's notes and tasks.
 
 AVAILABLE NOTES:
 {''.join(notes_context) if notes_context else 'No notes available'}
@@ -1025,11 +1021,8 @@ TASKS:
 {''.join(tasks_context) if tasks_context else 'No tasks available'}
 
 Remember the conversation history and refer back to previous topics when relevant. Provide helpful, accurate answers based on the available information. If the information isn't sufficient, you can offer general explanations."""
-            
-            messages = [{"role": "system", "content": context_message}]
-        else:
-            # Use simpler system message for follow-up questions
-            messages = [{"role": "system", "content": "You are a helpful study assistant. Continue the conversation naturally, remembering what was discussed before."}]
+        
+        messages = [{"role": "system", "content": context_message}]
         
         # Add conversation history
         messages.extend(self.conversation_history)
