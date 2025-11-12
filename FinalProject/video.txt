@@ -1,0 +1,12 @@
+# Video Demo URL
+
+Add your YouTube video URL here (6-8 minutes demonstrating StudyPal)
+
+Format:
+https://www.youtube.com/watch?v=YOUR_VIDEO_ID
+
+The video should include:
+- Demonstration of StudyPal running
+- Key features in action (notes, tasks, AI agents)
+- Overview of the development process
+- Brief code walkthrough
