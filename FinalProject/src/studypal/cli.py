@@ -772,11 +772,23 @@ GENERAL:
             print("=" * 70)
             for i, q in enumerate(questions, 1):
                 print(f"\nQ{i}: {q.get('question', 'N/A')}")
-                print(f"Type: {q.get('type', 'N/A')}")
                 if q.get('options'):
-                    print(f"Options: {q['options']}")
-                print(f"Answer: {q.get('answer', 'N/A')}")
-                print("-" * 70)
+                    options = q['options']
+                    print()
+                    if isinstance(options, list):
+                        for opt in options:
+                            print(opt)
+                    else:
+                        # Parse string format like "A) option1 B) option2"
+                        options_str = str(options)
+                        # Split by letter followed by closing paren
+                        import re
+                        parts = re.split(r'(?=[A-D]\))', options_str)
+                        for part in parts:
+                            if part.strip():
+                                print(part.strip())
+                print(f"\nAnswer: {q.get('answer', 'N/A')}")
+                print("\n" + "-" * 70)
         except Exception as e:
             print(f"Error generating quiz: {e}")
     
