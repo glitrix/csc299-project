@@ -1,0 +1,59 @@
+AI Chat - Quiz Formatting Improvements
+Date: November 12, 2025
+================================================
+
+USER:
+Can you make the quiz questions formated better so that way its not just one long line.
+
+[Screenshot showing quiz output with questions, type, options, and answers all on single lines]
+
+ASSISTANT:
+I'll help you format the quiz questions better. Let me first look at the quiz command implementation to see how the questions are currently being displayed.
+
+[Searched for quiz-related code in FinalProject]
+[Read cli.py lines 743-800 to see current implementation]
+
+Done! I've improved the quiz question formatting to make it much more readable:
+
+**Changes made:**
+- Added blank lines before "Type" and "Answer" fields
+- Formatted the options list to display each option on its own line with indentation
+- Added extra spacing around the separator lines
+- The question, type, options (each on separate lines), and answer are now clearly separated
+
+Now when you run `quiz 4 --num 2`, the output will be nicely formatted with each element on its own line instead of being crammed together.
+
+================================================
+
+USER:
+I dont think having the type of question listed is nessasary so just take that out. Also for the multiple choice questions can you make it to where the options to choose from are on diffrent lines.
+for example
+A) Car
+B) Plane
+C) ....
+
+[Screenshot showing improved formatting but still with Type field and options formatting needing adjustment]
+
+ASSISTANT:
+Perfect! I've made the following changes:
+
+1. **Removed the "Type" line** - It's no longer displayed
+2. **Improved multiple choice formatting** - Options now appear on separate lines like:
+   ```
+   A) Car
+   B) Plane  
+   C) ...
+   ```
+
+The code now handles both list-format options and string-format options (like "A) option1 B) option2") by parsing them and putting each choice on its own line. The quiz questions will be much cleaner and easier to read now!
+
+================================================
+
+SUMMARY:
+Modified FinalProject/src/studypal/cli.py to improve quiz question display formatting:
+1. Added better spacing between question elements
+2. Removed the "Type" field from output
+3. Formatted multiple choice options to display each option (A), B), C), etc.) on separate lines
+4. Added regex parsing to handle string-format options
+
+The quiz command now produces clean, readable output with proper line breaks and spacing.
