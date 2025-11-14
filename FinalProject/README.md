@@ -32,6 +32,12 @@ A terminal-based study assistant that combines Personal Knowledge Management (PK
 - **Daily Recommendations**: AI-powered task prioritization for optimal productivity
 - **Quiz Generator**: Creates practice questions (multiple choice, true/false, short answer)
 - **Knowledge Assistant**: RAG-powered Q&A about your notes and tasks
+- **Study Buddy Chat Mode**: 🎓 NEW! Interactive conversational AI tutor
+  - Maintains context throughout your study session
+  - Quiz you on topics from your notes
+  - Explain difficult concepts
+  - Provide personalized study strategies
+  - See [CHAT_MODE.md](docs/CHAT_MODE.md) for full details
 
 #### Content Enhancement
 - **Note Expander**: AI-assisted content improvement (expand, clarify, add examples, simplify)
@@ -161,6 +167,25 @@ plan today
 
 summary <note_id>
     Generate a summary of a note
+
+quiz <note_id> [--num 5]
+    Generate quiz questions from a note
+
+expand <note_id> [--mode expand|clarify|examples|simplify]
+    AI-assisted note improvement
+
+ask "your question"
+    Ask questions about your notes and tasks (remembers conversation)
+
+clear conversation
+    Clear the AI conversation history
+
+chat
+    Enter interactive Study Buddy chat mode (NEW! 🎓)
+    - Conversational AI tutor
+    - Remembers context throughout session
+    - Can quiz you, explain concepts, provide study guidance
+    - See docs/CHAT_MODE.md for details
 ```
 
 #### General Commands

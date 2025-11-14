@@ -7,7 +7,7 @@ from .storage import Storage
 from .pkms import PKMS
 from .tasks import TaskManager
 from .agents import (LinkSuggester, TagSuggester, StudyPlanner, SummaryGenerator,
-                      SemanticSearchAgent, QuizGenerator, KnowledgeAssistant, NoteExpander)
+                      SemanticSearchAgent, QuizGenerator, KnowledgeAssistant, NoteExpander, StudyBuddyChat)
 from .utils import parse_tags, format_date, truncate_text, wrap_text
 
 
@@ -33,6 +33,7 @@ class CLI:
         self.quiz_generator = QuizGenerator(self.pkms)
         self.knowledge_assistant = KnowledgeAssistant(self.pkms, self.task_manager)
         self.note_expander = NoteExpander(self.pkms)
+        self.study_buddy = StudyBuddyChat(self.pkms, self.task_manager)
         
         self.running = True
     
@@ -104,6 +105,8 @@ class CLI:
             self.cmd_quiz(args)
         elif cmd == "expand":
             self.cmd_expand(args)
+        elif cmd == "chat":
+            self.cmd_chat(args)
         else:
             print(f"Unknown command: {cmd}. Type 'help' for available commands.")
     
@@ -169,6 +172,8 @@ AI AGENTS (All use OpenAI API):
       Generate quiz questions from a note
   expand <note_id> [--mode expand|clarify|examples|simplify]
       AI-assisted note improvement
+  chat
+      Enter interactive study buddy chat mode
 
 GENERAL:
   help
@@ -820,3 +825,19 @@ GENERAL:
             print("\nTo save this, use: update note <id> --content \"<paste content>\"")
         except Exception as e:
             print(f"Error improving note: {e}")
+
+    def cmd_chat(self, args: List[str]):
+        """Enter interactive study buddy chat mode.
+        
+        Args:
+            args: Command arguments (none expected)
+        """
+        print("\n🚀 Launching Study Buddy Chat Mode...")
+        print("Gathering your notes and tasks...\n")
+        
+        try:
+            self.study_buddy.start_chat_session()
+        except KeyboardInterrupt:
+            print("\n\nChat mode interrupted.")
+        except Exception as e:
+            print(f"Error in chat mode: {e}")

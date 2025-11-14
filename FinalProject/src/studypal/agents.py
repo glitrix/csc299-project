@@ -1144,3 +1144,219 @@ Provide improved content that maintains the original meaning while being more he
         )
         
         return response.choices[0].message.content.strip()
+
+
+class StudyBuddyChat:
+    """Interactive AI study buddy chat mode with conversational learning support."""
+    
+    def __init__(self, pkms: PKMS, task_manager: TaskManager):
+        """Initialize with PKMS and TaskManager.
+        
+        Args:
+            pkms: PKMS instance
+            task_manager: TaskManager instance
+        """
+        self.pkms = pkms
+        self.task_manager = task_manager
+        self.conversation_history = []
+        self.session_active = False
+        
+        # Initialize OpenAI client
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            print("\nWARNING: OPENAI_API_KEY not found in environment.")
+            print("AI-powered study buddy will not work.")
+            print("See OPENAI_SETUP.md for instructions.")
+            sys.exit(1)
+        
+        try:
+            self.openai_client = OpenAI(api_key=api_key)
+        except Exception as e:
+            print(f"\nERROR: Failed to initialize OpenAI client: {e}")
+            sys.exit(1)
+    
+    def start_chat_session(self):
+        """Start an interactive chat session with the AI study buddy.
+        
+        Returns:
+            None (runs interactive loop until user exits)
+        """
+        self.session_active = True
+        self.conversation_history = []
+        
+        print("\n" + "=" * 70)
+        print("🎓 Study Buddy Chat Mode")
+        print("=" * 70)
+        print("\nWelcome! I'm your AI study buddy. I can help you:")
+        print("  • Understand concepts from your notes")
+        print("  • Quiz you on topics")
+        print("  • Explain difficult ideas")
+        print("  • Suggest study strategies")
+        print("  • Answer questions about your study materials")
+        print("\nTips:")
+        print("  - Ask me to quiz you: 'quiz me on Python'")
+        print("  - Request explanations: 'explain recursion'")
+        print("  - Get study tips: 'how should I study for my exam?'")
+        print("  - Type 'bye', 'exit', or 'quit' to leave chat mode")
+        print("=" * 70)
+        
+        # Get initial context
+        self._load_context()
+        
+        while self.session_active:
+            try:
+                user_input = input("\n💭 You: ").strip()
+                
+                if not user_input:
+                    continue
+                
+                # Check for exit commands
+                if user_input.lower() in ['bye', 'exit', 'quit', 'stop', 'end']:
+                    self._end_session()
+                    break
+                
+                # Get AI response
+                response = self._chat_with_ai(user_input)
+                
+                print(f"\n🤖 Study Buddy: {self._format_response(response)}")
+                
+            except KeyboardInterrupt:
+                print("\n\nUse 'bye' or 'exit' to leave chat mode.")
+            except Exception as e:
+                print(f"\n❌ Error: {e}")
+                print("Let's try that again...")
+    
+    def _load_context(self):
+        """Load user's notes and tasks as context for the chat."""
+        notes = self.pkms.list_notes()
+        tasks = self.task_manager.list_tasks()
+        
+        # Prepare summary of available knowledge
+        notes_summary = []
+        for note in notes[:15]:  # Limit to avoid token overflow
+            summary = f"- {note['title']}"
+            if note.get('tags'):
+                summary += f" (Tags: {', '.join(note['tags'])})"
+            notes_summary.append(summary)
+        
+        tasks_summary = []
+        for task in tasks[:10]:
+            summary = f"- {task['title']} (Status: {task['status']})"
+            if task.get('priority'):
+                summary += f", Priority: {task['priority']}"
+            tasks_summary.append(summary)
+        
+        # Create system context
+        self.system_context = f"""You are an enthusiastic, friendly AI study buddy helping a student learn. Your personality is encouraging, patient, and supportive.
+
+STUDENT'S KNOWLEDGE BASE:
+
+Notes Available:
+{chr(10).join(notes_summary) if notes_summary else 'No notes yet'}
+
+Current Tasks:
+{chr(10).join(tasks_summary) if tasks_summary else 'No tasks yet'}
+
+YOUR ROLE:
+- Help the student understand their study materials
+- Quiz them when requested (create questions on the spot)
+- Explain concepts clearly and simply
+- Provide study tips and strategies
+- Encourage and motivate them
+- Reference their specific notes when relevant
+- Be conversational and engaging
+
+Keep responses concise (2-4 paragraphs max) unless detailed explanation is requested."""
+    
+    def _chat_with_ai(self, user_message: str) -> str:
+        """Send message to AI and get response.
+        
+        Args:
+            user_message: User's message
+            
+        Returns:
+            AI response
+        """
+        messages = [{"role": "system", "content": self.system_context}]
+        
+        # Add conversation history
+        messages.extend(self.conversation_history)
+        
+        # Add current message
+        messages.append({"role": "user", "content": user_message})
+        
+        try:
+            response = self.openai_client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=messages,
+                temperature=0.7,  # More creative/conversational
+                max_tokens=600
+            )
+            
+            ai_response = response.choices[0].message.content.strip()
+            
+            # Save to history
+            self.conversation_history.append({"role": "user", "content": user_message})
+            self.conversation_history.append({"role": "assistant", "content": ai_response})
+            
+            # Keep history manageable (last 15 exchanges = 30 messages)
+            if len(self.conversation_history) > 30:
+                self.conversation_history = self.conversation_history[-30:]
+            
+            return ai_response
+            
+        except Exception as e:
+            raise Exception(f"OpenAI API call failed: {e}")
+    
+    def _format_response(self, response: str) -> str:
+        """Format AI response for better readability.
+        
+        Args:
+            response: Raw AI response
+            
+        Returns:
+            Formatted response
+        """
+        # Add line breaks for better readability
+        lines = response.split('\n')
+        formatted = []
+        
+        for line in lines:
+            if line.strip():
+                # Wrap long lines
+                if len(line) > 70:
+                    words = line.split()
+                    current_line = []
+                    current_length = 0
+                    
+                    for word in words:
+                        if current_length + len(word) + 1 <= 70:
+                            current_line.append(word)
+                            current_length += len(word) + 1
+                        else:
+                            if current_line:
+                                formatted.append(' '.join(current_line))
+                            current_line = [word]
+                            current_length = len(word)
+                    
+                    if current_line:
+                        formatted.append(' '.join(current_line))
+                else:
+                    formatted.append(line)
+            else:
+                formatted.append('')
+        
+        return '\n'.join(formatted)
+    
+    def _end_session(self):
+        """End the chat session."""
+        self.session_active = False
+        
+        # Calculate session stats
+        exchanges = len(self.conversation_history) // 2
+        
+        print("\n" + "=" * 70)
+        print("👋 Thanks for studying with me!")
+        print(f"Session summary: {exchanges} message exchanges")
+        print("Keep up the great work! 🌟")
+        print("=" * 70 + "\n")

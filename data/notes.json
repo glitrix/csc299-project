@@ -1,0 +1,28 @@
+{
+  "notes": [
+    {
+      "title": "Python Basics",
+      "content": [
+        "python",
+        "programming"
+      ],
+      "tags": "Python is a high-level programming language. Key concepts: variables, functions, loops.",
+      "id": 1,
+      "created_at": "2025-11-13T17:59:59.775175",
+      "updated_at": "2025-11-13T17:59:59.775181"
+    },
+    {
+      "title": "Data Structures",
+      "content": [
+        "python",
+        "algorithms"
+      ],
+      "tags": "Common data structures: lists, dictionaries, sets, tuples. Each has different use cases.",
+      "id": 2,
+      "created_at": "2025-11-13T17:59:59.777265",
+      "updated_at": "2025-11-13T17:59:59.777269"
+    }
+  ],
+  "links": [],
+  "next_id": 3
+}
