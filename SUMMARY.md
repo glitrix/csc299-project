@@ -1,94 +1,14 @@
 # StudyPal Development Summary
+When developing my final project StudyPal. I first began by creating the requirements.md file to guide the AI in the right direction for my project. I created this file because it helped guide the AI coding assistant without it derailing off into a random direction. This file helped me place constraints on the AI and allowed me to explain in very fine detail as to what I wanted my software to do. It was much easier to put all of these details into an easy, scannable document instead of typing it all into the AI coding assistants interface. I also used GitHub CoPilot as my AI coding assistant and switched between the Claude Sonnet 4 and GPT-5-mini models. 
 
-*This document will detail the development process, AI assistant usage, and lessons learned.*
+After I created that document, I then used Claude Sonnet 4 in agent mode and told it to implement the ideas that were in the requirements.md file. It then went off and began writing all the code. After that code was done being written, I then created tests to run with pytest to make sure everything was working properly. There were some errors in the code that I just explained to the coding assistant, and they were fixed in less than five minutes. I did this multiple times with the AI coding assistant until I was satisfied with the results. 
 
-## Overview
+After the tests were passing, I then switched to ask mode and chose GPT-5-mini and asked it for any other ideas that would be cool to add to my project. It gave me a list of about twenty ideas to choose from, and I chose about five of them. I then switched to plan mode and asked GPT-5-mini to plan out the five ideas I chose, and it went off and wrote me a plan. I then took that plan and gave it to Claude Sonnet 4 in agent mode, and it began implementing the code. I then created tests to run, and when they all passed, I did the same thing over and over until I was satisfied with my project. 
 
-StudyPal is a terminal-based study assistant that combines Personal Knowledge Management (PKMS), task management, and AI agents to help organize and manage study materials.
+I pretty much used GPT-5-mini to ask for ideas and the plan to implement, and then switched to Claude Sonnet 4 in agent mode to implement the code. I tried the other Claude Models in the beginning and just thought Sonnet 4 did the best. 
 
-## Development Process
+What worked really well with this project was making the requirements.md file to explain everything to the AI coding assistant. This allowed me to have more control over what the AI was going to do. Cause what didn't work very well for me was just spitting very vague sentences at the AI coding assistant and not being satisfied with the code it would make. So I think laying out the whole plan in a document and placing constraints on the AI really helps with the outcome of the code. 
 
-### Phase 1: Planning and Requirements Analysis
-*To be documented...*
+I also had a lot of success with just asking GPT-5-mini a question and then a plan for how I should fix it, instead of just saying “fix my project, it's broken” to the AI coding assistant. I learned very quickly in the beginning that it is very important to give the AI coding assistant the most amount of detail as possible because the more detail, the better the outcome. If you give all the right details on the get-go, then that just saves you a ton of time. It also saves you a lot of premium tokens with the AI coding assistant because it will be able to implement exactly what you want. 
 
-- Read and analyzed the project requirements
-- Identified core features needed
-- Planned project structure
-
-### Phase 2: Initial Implementation
-*To be documented...*
-
-- Created project structure
-- Implemented storage layer using JSON
-- Built PKMS functionality
-- Implemented task management
-- Created AI agents
-
-### Phase 3: CLI and Integration
-*To be documented...*
-
-- Developed command-line interface
-- Integrated all components
-- Implemented command parsing
-
-### Phase 4: Testing
-*To be documented...*
-
-- Wrote comprehensive test suite
-- Tested all major functionality
-- Fixed bugs discovered during testing
-
-## AI Assistant Usage
-
-### How I Used AI Assistants
-
-*To be documented in detail (500+ words recommended)...*
-
-#### GitHub Copilot
-- Used for autocomplete while coding
-- Helped with boilerplate code generation
-- Suggested function implementations
-
-#### ChatGPT/Claude
-- Used for planning and architecture decisions
-- Helped design the command structure
-- Assisted with debugging
-
-### What Worked Well
-
-*To be documented...*
-
-- Quick prototyping with AI assistance
-- Good suggestions for test cases
-- Helpful with documentation
-
-### What Didn't Work
-
-*To be documented...*
-
-- Some AI suggestions needed refinement
-- Had to manually adjust some implementations
-- Required understanding to validate AI output
-
-## Challenges and Solutions
-
-*To be documented...*
-
-## Lessons Learned
-
-*To be documented...*
-
-## Specific Examples
-
-*To be documented with concrete examples...*
-
----
-
-**Note**: This SUMMARY.md file is a template. It should be filled out with detailed information about:
-1. How AI coding assistants were used throughout development
-2. The development process and iterations
-3. What worked well and what didn't
-4. Specific examples of AI assistance
-5. Challenges encountered and how they were solved
-
-Aim for 500+ words with specific details and examples.
+The final product of my software, I was very satisfied with the outcome because I took the time to plan out the requirements.md file. My software is essentially a place to store your notes and tasks that you may need to complete. My software is also accompanied by an LLM that has access to all those notes and tasks you may have. The LLM can generate quizzes for you, you can ask it questions about your notes or tasks, you can have it plan the day or week out with the best ways to study, and you can also just make it go into chat mode, where you just talk back and forth with the LLM like you would on ChatGPT.com. Creating this project was a lot of fun, and I created software that I will be able to use for studying for the rest of my time in college. 
