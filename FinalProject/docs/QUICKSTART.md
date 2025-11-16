@@ -23,14 +23,9 @@
    
    You should see all tests pass with green checkmarks.
 
-5. **Start StudyPal:**
+4. **Start StudyPal:**
    ```powershell
-   py studypal.py
-   ```
-   
-   Or alternatively:
-   ```powershell
-   py -m src.studypal
+   py run_studypal.py
    ```
 
 ## Your First Session
