@@ -1,12 +1,17 @@
 """Tests for AI agents."""
 
+import os
 import pytest
 import tempfile
 import shutil
-from src.studypal.storage import Storage
-from src.studypal.pkms import PKMS
-from src.studypal.tasks import TaskManager
-from src.studypal.agents import LinkSuggester, TagSuggester, StudyPlanner, SummaryGenerator
+from studypal.storage import Storage
+from studypal.pkms import PKMS
+from studypal.tasks import TaskManager
+from studypal.agents import LinkSuggester, TagSuggester, StudyPlanner, SummaryGenerator
+
+# Check if valid API key is available
+VALID_API_KEY = os.getenv("OPENAI_API_KEY") and not os.getenv("OPENAI_API_KEY", "").startswith("sk-test")
+skip_without_api = pytest.mark.skipif(not VALID_API_KEY, reason="Requires valid OpenAI API key")
 
 
 @pytest.fixture
@@ -54,6 +59,7 @@ def summary_generator(pkms):
     return SummaryGenerator(pkms)
 
 
+@skip_without_api
 def test_link_suggester_basic(pkms, link_suggester):
     """Test basic link suggestion."""
     note1_id = pkms.add_note("Python Basics", "Learn Python programming fundamentals")
@@ -68,6 +74,7 @@ def test_link_suggester_basic(pkms, link_suggester):
     assert note2_id in suggested_ids
 
 
+@skip_without_api
 def test_link_suggester_with_tags(pkms, link_suggester):
     """Test link suggestion with tag similarity."""
     note1_id = pkms.add_note("Python Basics", "Python intro", tags=["python", "programming"])
@@ -82,6 +89,7 @@ def test_link_suggester_with_tags(pkms, link_suggester):
     assert note2_id in suggested_ids
 
 
+@skip_without_api
 def test_link_suggester_excludes_existing_links(pkms, link_suggester):
     """Test that already linked notes are not suggested."""
     note1_id = pkms.add_note("Note 1", "Python programming")
@@ -96,6 +104,7 @@ def test_link_suggester_excludes_existing_links(pkms, link_suggester):
     assert note2_id not in suggested_ids
 
 
+@skip_without_api
 def test_tag_suggester(pkms, tag_suggester):
     """Test tag suggestion."""
     # Create notes with existing tags
@@ -111,6 +120,7 @@ def test_tag_suggester(pkms, tag_suggester):
     assert "python" in suggestions or "programming" in suggestions
 
 
+@skip_without_api
 def test_study_planner_plan_week(task_manager, pkms, study_planner):
     """Test weekly study plan generation."""
     # Add some tasks
@@ -125,6 +135,7 @@ def test_study_planner_plan_week(task_manager, pkms, study_planner):
     assert "Sunday" in plan
 
 
+@skip_without_api
 def test_study_planner_daily_schedule(task_manager, pkms, study_planner):
     """Test daily schedule suggestion."""
     from datetime import date, timedelta
@@ -143,6 +154,7 @@ def test_study_planner_daily_schedule(task_manager, pkms, study_planner):
     assert schedule[0]['priority'] >= 3 or schedule[0].get('due_date') == tomorrow
 
 
+@skip_without_api
 def test_summary_generator(pkms, summary_generator):
     """Test summary generation."""
     content = """This is the first sentence. This is the second sentence. 
@@ -156,6 +168,7 @@ def test_summary_generator(pkms, summary_generator):
     assert summary != ""
 
 
+@skip_without_api
 def test_summary_generator_short_content(pkms, summary_generator):
     """Test summary with short content."""
     content = "Short content."
@@ -167,6 +180,7 @@ def test_summary_generator_short_content(pkms, summary_generator):
     assert summary == content
 
 
+@skip_without_api
 def test_summary_generator_no_content(pkms, summary_generator):
     """Test summary with no content."""
     note_id = pkms.add_note("Empty Note", "")
@@ -177,6 +191,7 @@ def test_summary_generator_no_content(pkms, summary_generator):
     assert "no content" in summary.lower()
 
 
+@skip_without_api
 def test_summarize_all_notes(pkms, summary_generator):
     """Test summarizing all notes."""
     pkms.add_note("Note 1", "Content for note 1", tags=["test"])

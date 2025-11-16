@@ -4,8 +4,8 @@ import pytest
 import tempfile
 import shutil
 from pathlib import Path
-from src.studypal.storage import Storage
-from src.studypal.pkms import PKMS
+from studypal.storage import Storage
+from studypal.pkms import PKMS
 
 
 @pytest.fixture

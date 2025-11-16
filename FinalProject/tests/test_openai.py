@@ -2,10 +2,16 @@
 
 import os
 import pytest
-from src.studypal.storage import Storage
-from src.studypal.pkms import PKMS
-from src.studypal.tasks import TaskManager
-from src.studypal.agents import StudyPlanner
+from studypal.storage import Storage
+from studypal.pkms import PKMS
+from studypal.tasks import TaskManager
+from studypal.agents import StudyPlanner
+
+# Skip all tests in this file if no valid API key
+pytestmark = pytest.mark.skipif(
+    not os.getenv("OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY", "").startswith("sk-test"),
+    reason="OpenAI tests require a valid API key"
+)
 
 
 @pytest.fixture
