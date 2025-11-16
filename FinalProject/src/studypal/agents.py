@@ -368,13 +368,48 @@ class StudyPlanner:
             days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
             return {day: [] for day in days}
         
-        # Always use AI planning
+        # Try AI planning, fall back to basic if it fails
         try:
             return self._plan_week_with_ai(all_tasks)
         except Exception as e:
             print(f"\nERROR: OpenAI API call failed: {e}")
             print("Please check your API key and internet connection.")
-            raise
+            print("Falling back to basic planning...")
+            return self._plan_week_basic(all_tasks)
+    
+    def _plan_week_basic(self, all_tasks: List[Dict]) -> Dict[str, List[Dict]]:
+        """Create a basic weekly plan without AI.
+        
+        Args:
+            all_tasks: List of tasks to plan
+            
+        Returns:
+            Dictionary mapping day names to lists of planned activities
+        """
+        days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        plan = {day: [] for day in days}
+        
+        # Sort tasks by priority and due date
+        sorted_tasks = sorted(
+            all_tasks,
+            key=lambda t: (
+                -t.get('priority', 1),  # Higher priority first
+                t.get('due_date') or '9999-12-31'  # Earlier due dates first
+            )
+        )
+        
+        # Distribute tasks across weekdays (skip weekend for basic planning)
+        weekdays = days[:5]
+        for i, task in enumerate(sorted_tasks):
+            day = weekdays[i % 5]
+            plan[day].append({
+                'task_id': task['id'],
+                'title': task['title'],
+                'priority': task.get('priority', 1),
+                'duration': '1-2 hours'
+            })
+        
+        return plan
     
     def _plan_week_with_ai(self, all_tasks: List[Dict]) -> Dict[str, List[Dict]]:
         """Create weekly plan using OpenAI for intelligent scheduling.

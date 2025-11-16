@@ -2,6 +2,16 @@
 
 import os
 import pytest
+from pathlib import Path
+
+# Load .env file if it exists
+try:
+    from dotenv import load_dotenv
+    env_path = Path(__file__).parent.parent / ".env"
+    if env_path.exists():
+        load_dotenv(env_path)
+except ImportError:
+    pass
 
 # Set a dummy OpenAI API key for tests that need it
 # This allows tests to run without requiring an actual API key
