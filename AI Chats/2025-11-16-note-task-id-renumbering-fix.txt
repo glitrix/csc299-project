@@ -1,0 +1,51 @@
+2025-11-16 Note and Task ID Renumbering Fix
+
+ISSUE:
+When deleting notes or tasks, the ID numbering system was not working correctly. After deleting note #1 and creating a new note, it would be assigned #2 instead of #1. Additionally, when note #1 was deleted, note #2 would retain its ID of #2 instead of being renumbered to #1.
+
+Example of the problem:
+- Created note #1 and note #2
+- Deleted note #1
+- Note #2 remained as #2 (should become #1)
+- New note would get ID #1 but display out of order
+
+SOLUTION:
+Modified the storage.py module to implement proper ID renumbering:
+
+1. Updated `add_note()` and `add_task()` methods:
+   - Find the lowest available ID starting from 1
+   - Check which IDs are already in use
+   - Assign the smallest unused number
+   - Update next_id to be one more than the highest ID
+
+2. Updated `delete_note()` and `delete_task()` methods:
+   - After deletion, renumber ALL remaining items sequentially starting from 1
+   - For notes: Update any links to reflect the new IDs
+   - Sort items by ID before renumbering
+   - Set next_id to count + 1
+
+3. Updated CLI display in cli.py:
+   - Added sorting by ID to `_list_notes()` method
+   - Added sorting by ID to `_list_tasks()` method
+   - Ensures items always display in numerical order
+
+FILES MODIFIED:
+- FinalProject/src/studypal/storage.py
+  - add_note() - finds lowest available ID
+  - add_task() - finds lowest available ID
+  - delete_note() - renumbers all remaining notes and updates links
+  - delete_task() - renumbers all remaining tasks
+  
+- FinalProject/src/studypal/cli.py
+  - _list_notes() - sorts notes by ID before display
+  - _list_tasks() - sorts tasks by ID before display
+
+RESULT:
+Now when you delete items, all remaining items are renumbered sequentially (1, 2, 3, etc.) with no gaps. The system maintains clean, sequential numbering that's easy to understand and reference.
+
+Example after fix:
+- Have notes #1, #2, #3
+- Delete note #1
+- Note #2 becomes #1, Note #3 becomes #2
+- Next note created will be #3
+- Display always shows items in order: #1, #2, #3
