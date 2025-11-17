@@ -93,12 +93,21 @@ class Storage:
             ID of the newly created note
         """
         data = self.load_notes()
-        note_id = data['next_id']
+        
+        # Find the lowest available ID
+        existing_ids = {n['id'] for n in data['notes']}
+        note_id = 1
+        while note_id in existing_ids:
+            note_id += 1
+        
         note['id'] = note_id
         note['created_at'] = datetime.now().isoformat()
         note['updated_at'] = datetime.now().isoformat()
         data['notes'].append(note)
-        data['next_id'] += 1
+        
+        # Update next_id to be one more than the highest ID
+        data['next_id'] = max([n['id'] for n in data['notes']], default=0) + 1
+        
         self.save_notes(data)
         return note_id
     
@@ -137,7 +146,7 @@ class Storage:
         return False
     
     def delete_note(self, note_id: int) -> bool:
-        """Delete a note by ID.
+        """Delete a note by ID and renumber remaining notes.
         
         Args:
             note_id: ID of the note to delete
@@ -148,7 +157,24 @@ class Storage:
         data = self.load_notes()
         original_len = len(data['notes'])
         data['notes'] = [n for n in data['notes'] if n['id'] != note_id]
+        
         if len(data['notes']) < original_len:
+            # Renumber all remaining notes sequentially starting from 1
+            data['notes'].sort(key=lambda n: n['id'])
+            for idx, note in enumerate(data['notes'], start=1):
+                old_id = note['id']
+                note['id'] = idx
+                
+                # Update links to reflect new IDs
+                for link in data['links']:
+                    if link['from_note_id'] == old_id:
+                        link['from_note_id'] = idx
+                    if link['to_note_id'] == old_id:
+                        link['to_note_id'] = idx
+            
+            # Update next_id
+            data['next_id'] = len(data['notes']) + 1
+            
             self.save_notes(data)
             return True
         return False
@@ -210,12 +236,21 @@ class Storage:
             ID of the newly created task
         """
         data = self.load_tasks()
-        task_id = data['next_id']
+        
+        # Find the lowest available ID
+        existing_ids = {t['id'] for t in data['tasks']}
+        task_id = 1
+        while task_id in existing_ids:
+            task_id += 1
+        
         task['id'] = task_id
         task['created_at'] = datetime.now().isoformat()
         task['updated_at'] = datetime.now().isoformat()
         data['tasks'].append(task)
-        data['next_id'] += 1
+        
+        # Update next_id to be one more than the highest ID
+        data['next_id'] = max([t['id'] for t in data['tasks']], default=0) + 1
+        
         self.save_tasks(data)
         return task_id
     
@@ -254,7 +289,7 @@ class Storage:
         return False
     
     def delete_task(self, task_id: int) -> bool:
-        """Delete a task by ID.
+        """Delete a task by ID and renumber remaining tasks.
         
         Args:
             task_id: ID of the task to delete
@@ -265,7 +300,16 @@ class Storage:
         data = self.load_tasks()
         original_len = len(data['tasks'])
         data['tasks'] = [t for t in data['tasks'] if t['id'] != task_id]
+        
         if len(data['tasks']) < original_len:
+            # Renumber all remaining tasks sequentially starting from 1
+            data['tasks'].sort(key=lambda t: t['id'])
+            for idx, task in enumerate(data['tasks'], start=1):
+                task['id'] = idx
+            
+            # Update next_id
+            data['next_id'] = len(data['tasks']) + 1
+            
             self.save_tasks(data)
             return True
         return False

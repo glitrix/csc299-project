@@ -295,6 +295,9 @@ GENERAL:
             print("No notes found.")
             return
         
+        # Sort notes by ID
+        notes.sort(key=lambda n: n['id'])
+        
         print(f"\nFound {len(notes)} note(s):")
         print("-" * 70)
         for note in notes:
@@ -330,6 +333,9 @@ GENERAL:
         if not tasks:
             print("No tasks found.")
             return
+        
+        # Sort tasks by ID
+        tasks.sort(key=lambda t: t['id'])
         
         print(f"\nFound {len(tasks)} task(s):")
         print("-" * 70)
