@@ -352,7 +352,7 @@ class StudyPlanner:
             print(f"\nERROR: Failed to initialize OpenAI client: {e}")
             sys.exit(1)
     
-    def plan_week(self) -> Dict[str, List[Dict]]:
+    def plan_tasks_week(self) -> Dict[str, List[Dict]]:
         """Create a weekly study plan based on tasks and deadlines using AI.
         
         Returns:
@@ -531,6 +531,154 @@ Keep it concise and practical."""
         
         return plan
     
+    def plan_notes_week(self) -> Dict[str, List[Dict]]:
+        """Create a weekly note review plan using AI.
+        
+        Returns:
+            Dictionary mapping day names to lists of note review activities
+        """
+        notes = self.pkms.list_notes()
+        
+        if not notes:
+            days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+            return {day: [] for day in days}
+        
+        try:
+            return self._plan_notes_week_with_ai(notes)
+        except Exception as e:
+            print(f"\nERROR: OpenAI API call failed: {e}")
+            print("Please check your API key and internet connection.")
+            print("Falling back to basic note planning...")
+            return self._plan_notes_week_basic(notes)
+    
+    def _plan_notes_week_basic(self, notes: List[Dict]) -> Dict[str, List[Dict]]:
+        """Create a basic weekly note review plan.
+        
+        Args:
+            notes: List of all notes
+            
+        Returns:
+            Dictionary mapping days to note review activities
+        """
+        days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        plan = {day: [] for day in days}
+        
+        # Distribute notes evenly across the week
+        weekdays = days[:5]  # Monday to Friday
+        for i, note in enumerate(notes):
+            day = weekdays[i % 5]
+            plan[day].append({
+                'note': note,
+                'estimated_hours': 0.5,
+                'type': 'review'
+            })
+        
+        return plan
+    
+    def _plan_notes_week_with_ai(self, notes: List[Dict]) -> Dict[str, List[Dict]]:
+        """Create weekly note review plan using AI.
+        
+        Args:
+            notes: List of all notes
+            
+        Returns:
+            Dictionary mapping days to note review activities
+        """
+        # Prepare note information
+        note_info = []
+        for note in notes:
+            info = f"Note: {note['title']}"
+            if note.get('tags'):
+                info += f", Tags: {', '.join(note['tags'])}"
+            if note.get('content'):
+                info += f", Content preview: {note['content'][:100]}..."
+            note_info.append(info)
+        
+        prompt = f"""Create an optimal weekly note review schedule for these study notes.
+        
+Notes to review:
+{chr(10).join(note_info)}
+
+Please create a balanced weekly schedule (Monday-Sunday) that:
+1. Groups related notes by tags on the same day when possible
+2. Distributes notes evenly across the week
+3. Estimates 30-60 minutes per note review
+4. Keeps weekdays busier than weekends
+5. Provides spaced repetition opportunities
+
+Respond in this exact format:
+Monday:
+- Note Title (0.5h)
+Tuesday:
+- Note Title (0.5h)
+...
+
+Keep it concise and practical."""
+
+        response = self.openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are a helpful study planning assistant. Create practical, balanced note review schedules."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7,
+            max_tokens=800
+        )
+        
+        ai_plan_text = response.choices[0].message.content
+        return self._parse_ai_note_plan(ai_plan_text, notes)
+    
+    def _parse_ai_note_plan(self, ai_text: str, notes: List[Dict]) -> Dict[str, List[Dict]]:
+        """Parse AI-generated note review plan.
+        
+        Args:
+            ai_text: AI-generated plan text
+            notes: List of all notes
+            
+        Returns:
+            Structured plan dictionary
+        """
+        days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        plan = {day: [] for day in days}
+        
+        current_day = None
+        lines = ai_text.split('\n')
+        
+        # Create note lookup by title
+        note_lookup = {note['title'].lower(): note for note in notes}
+        
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+            
+            # Check if line is a day header
+            for day in days:
+                if day in line and ':' in line:
+                    current_day = day
+                    break
+            
+            # Parse note review lines
+            if current_day and line.startswith('-'):
+                # Extract note title and hours
+                note_match = re.search(r'-\s*(.+?)\s*\((\d+(?:\.\d+)?)h\)', line)
+                if note_match:
+                    note_title = note_match.group(1).strip()
+                    hours = float(note_match.group(2))
+                    
+                    # Try to find matching note
+                    note_title_lower = note_title.lower()
+                    for title, note in note_lookup.items():
+                        if title in note_title_lower or note_title_lower in title:
+                            plan[current_day].append({
+                                'note': note,
+                                'estimated_hours': hours,
+                                'type': 'review'
+                            })
+                            break
+        
+        return plan
+    
     def suggest_daily_schedule(self) -> List[Dict]:
         """Suggest tasks for today using AI-powered prioritization.
         
@@ -627,6 +775,86 @@ Respond with task IDs in order of importance, one per line, like:
                 recommended_tasks.append(task)
         
         return recommended_tasks[:5]
+    
+    def suggest_daily_notes(self) -> List[Dict]:
+        """Suggest notes to review today using AI.
+        
+        Returns:
+            List of notes recommended for today
+        """
+        notes = self.pkms.list_notes()
+        
+        if not notes:
+            return []
+        
+        try:
+            return self._suggest_daily_notes_with_ai(notes)
+        except Exception as e:
+            print(f"\nERROR: OpenAI API call failed: {e}")
+            print("Please check your API key and internet connection.")
+            raise
+    
+    def _suggest_daily_notes_with_ai(self, notes: List[Dict]) -> List[Dict]:
+        """Use AI to suggest notes for daily review.
+        
+        Args:
+            notes: List of all notes
+            
+        Returns:
+            List of recommended notes for today
+        """
+        # Prepare note information
+        note_info = []
+        for note in notes:
+            info = f"ID {note['id']}: {note['title']}"
+            if note.get('tags'):
+                info += f", Tags: {', '.join(note['tags'])}"
+            note_info.append(info)
+        
+        prompt = f"""Given these study notes, recommend the top 5 notes to review today.
+Consider importance, tags, and spaced repetition principles.
+
+Notes:
+{chr(10).join(note_info)}
+
+Respond with note IDs in order of priority, one per line, like:
+1. ID X - Brief reason
+2. ID Y - Brief reason
+..."""
+
+        response = self.openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are a study assistant helping prioritize daily note reviews for effective learning."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.5,
+            max_tokens=300
+        )
+        
+        ai_response = response.choices[0].message.content
+        
+        # Extract note IDs
+        recommended_ids = []
+        for line in ai_response.split('\n'):
+            match = re.search(r'ID\s+(\d+)', line)
+            if match:
+                recommended_ids.append(int(match.group(1)))
+        
+        # Reorder notes based on AI recommendations
+        note_dict = {note['id']: note for note in notes}
+        recommended_notes = []
+        
+        for note_id in recommended_ids:
+            if note_id in note_dict:
+                recommended_notes.append(note_dict[note_id])
+        
+        # Add remaining notes if less than 5 recommended
+        for note in notes:
+            if note not in recommended_notes and len(recommended_notes) < 5:
+                recommended_notes.append(note)
+        
+        return recommended_notes[:5]
 
 
 class SummaryGenerator:

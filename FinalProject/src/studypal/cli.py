@@ -156,10 +156,14 @@ AI AGENTS (All use OpenAI API):
       AI-powered semantic link suggestions between notes
   suggest tags <note_id>
       AI-generated contextually relevant tags
-  plan week
-      Generate an intelligent weekly study plan
-  plan today
+  plan tasks week
+      Generate an intelligent weekly task study plan
+  plan tasks today (or day)
       Get AI-recommended tasks for today
+  plan notes week
+      Generate an intelligent weekly note review plan
+  plan notes today (or day)
+      Get AI-recommended notes to review today
   summary <note_id>
       Generate AI-powered note summary
   search notes "natural language query"
@@ -652,45 +656,100 @@ GENERAL:
     def cmd_plan(self, args: List[str]):
         """Handle plan commands."""
         if not args:
-            print("Usage: plan week|today")
+            print("Usage: plan tasks week|today  OR  plan notes week|today")
             return
         
-        plan_type = args[0].lower()
+        # Check if first argument is 'tasks' or 'notes'
+        if len(args) >= 2 and args[0].lower() in ['tasks', 'notes']:
+            focus = args[0].lower()
+            plan_type = args[1].lower()
+        else:
+            # Backward compatibility: 'plan week' defaults to tasks
+            focus = 'tasks'
+            plan_type = args[0].lower()
         
-        if plan_type == "week":
-            plan = self.study_planner.plan_week()
-            print("\nAI Response - Weekly Study Plan:")
-            print("=" * 70)
-            for day, activities in plan.items():
-                print(f"\n{day}:")
-                if not activities:
-                    print("  (Rest day)")
-                    continue
+        # Handle task planning
+        if focus == 'tasks':
+            if plan_type == "week":
+                plan = self.study_planner.plan_tasks_week()
+                if not plan or all(len(activities) == 0 for activities in plan.values()):
+                    print("\n📝 No tasks to plan!")
+                    print("Add some tasks first using: add task \"Task name\" [--due YYYY-MM-DD] [--priority 1-5]")
+                    return
                 
-                for activity in activities:
-                    if activity['type'] == 'task':
-                        task = activity['task']
-                        print(f"  • {task['title']} ({activity['estimated_hours']}h) [P{task['priority']}]")
-                    elif activity['type'] == 'review':
-                        note = activity['note']
-                        print(f"  • Review: {note['title']} ({activity['estimated_hours']}h)")
-            print("=" * 70)
-        
-        elif plan_type == "today":
-            tasks = self.study_planner.suggest_daily_schedule()
-            if not tasks:
-                print("No tasks recommended for today!")
-                return
+                print("\nAI Response - Weekly Study Plan (Tasks):")
+                print("=" * 70)
+                for day, activities in plan.items():
+                    print(f"\n{day}:")
+                    if not activities:
+                        print("  (Rest day)")
+                        continue
+                    
+                    for activity in activities:
+                        if activity['type'] == 'task':
+                            task = activity['task']
+                            print(f"  • {task['title']} ({activity['estimated_hours']}h) [P{task['priority']}]")
+                print("=" * 70)
             
-            print("\nAI Response - Recommended tasks for today:")
-            print("-" * 70)
-            for task in tasks:
-                due_str = f"(due: {task['due_date']})" if task.get('due_date') else ""
-                print(f"#{task['id']}: {task['title']} [P{task['priority']}] {due_str}")
-            print("-" * 70)
+            elif plan_type in ["today", "day"]:
+                tasks = self.study_planner.suggest_daily_schedule()
+                if not tasks:
+                    print("\n📝 No tasks recommended for today!")
+                    print("Add some tasks first using: add task \"Task name\" [--due YYYY-MM-DD] [--priority 1-5]")
+                    return
+                
+                print("\nAI Response - Recommended tasks for today:")
+                print("-" * 70)
+                for task in tasks:
+                    due_str = f"(due: {task['due_date']})" if task.get('due_date') else ""
+                    print(f"#{task['id']}: {task['title']} [P{task['priority']}] {due_str}")
+                print("-" * 70)
+            
+            else:
+                print(f"Unknown plan type: {plan_type}. Use 'week' or 'today'.")
+        
+        # Handle note planning
+        elif focus == 'notes':
+            if plan_type == "week":
+                plan = self.study_planner.plan_notes_week()
+                if not plan or all(len(activities) == 0 for activities in plan.values()):
+                    print("\n📚 No notes to plan!")
+                    print("Add some notes first using: add note \"Note title\" --content \"content\" [--tags tag1,tag2]")
+                    return
+                
+                print("\nAI Response - Weekly Study Plan (Notes):")
+                print("=" * 70)
+                for day, activities in plan.items():
+                    print(f"\n{day}:")
+                    if not activities:
+                        print("  (Light review)")
+                        continue
+                    
+                    for activity in activities:
+                        note = activity['note']
+                        tags_str = f"[{', '.join(note.get('tags', []))}]" if note.get('tags') else ""
+                        print(f"  • Review: {note['title']} {tags_str} ({activity['estimated_hours']}h)")
+                print("=" * 70)
+            
+            elif plan_type in ["today", "day"]:
+                notes = self.study_planner.suggest_daily_notes()
+                if not notes:
+                    print("\n📚 No notes to review today!")
+                    print("Add some notes first using: add note \"Note title\" --content \"content\" [--tags tag1,tag2]")
+                    return
+                
+                print("\nAI Response - Recommended notes to review today:")
+                print("-" * 70)
+                for note in notes:
+                    tags_str = f"[{', '.join(note.get('tags', []))}]" if note.get('tags') else ""
+                    print(f"#{note['id']}: {note['title']} {tags_str}")
+                print("-" * 70)
+            
+            else:
+                print(f"Unknown plan type: {plan_type}. Use 'week' or 'today'.")
         
         else:
-            print(f"Unknown plan type: {plan_type}")
+            print(f"Unknown focus: {focus}. Use 'tasks' or 'notes'.")
     
     def cmd_summary(self, args: List[str]):
         """Handle summary command."""
