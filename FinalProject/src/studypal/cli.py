@@ -732,18 +732,24 @@ GENERAL:
                 print("=" * 70)
             
             elif plan_type in ["today", "day"]:
-                notes = self.study_planner.suggest_daily_notes()
-                if not notes:
+                note_recommendations = self.study_planner.suggest_daily_notes()
+                if not note_recommendations:
                     print("\n📚 No notes to review today!")
                     print("Add some notes first using: add note \"Note title\" --content \"content\" [--tags tag1,tag2]")
                     return
                 
-                print("\nAI Response - Recommended notes to review today:")
-                print("-" * 70)
-                for note in notes:
+                print("\n🤖 AI Response - Recommended notes to review today:")
+                print("=" * 70)
+                for i, rec in enumerate(note_recommendations, 1):
+                    note = rec['note']
+                    reason = rec.get('reason', 'Recommended for review')
+                    focus = rec.get('focus', 'Review key concepts')
                     tags_str = f"[{', '.join(note.get('tags', []))}]" if note.get('tags') else ""
-                    print(f"#{note['id']}: {note['title']} {tags_str}")
-                print("-" * 70)
+                    
+                    print(f"\n{i}. #{note['id']}: {note['title']} {tags_str}")
+                    print(f"   💡 Why: {reason}")
+                    print(f"   🎯 Focus: {focus}")
+                print("\n" + "=" * 70)
             
             else:
                 print(f"Unknown plan type: {plan_type}. Use 'week' or 'today'.")

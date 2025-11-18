@@ -801,58 +801,75 @@ Respond with task IDs in order of importance, one per line, like:
             notes: List of all notes
             
         Returns:
-            List of recommended notes for today
+            List of dictionaries with 'note', 'reason', and 'focus' keys
         """
-        # Prepare note information
+        # Prepare note information with content previews
         note_info = []
         for note in notes:
             info = f"ID {note['id']}: {note['title']}"
             if note.get('tags'):
-                info += f", Tags: {', '.join(note['tags'])}"
+                info += f" [Tags: {', '.join(note['tags'])}]"
+            if note.get('content'):
+                info += f"\n   Content: {note['content'][:150]}..."
             note_info.append(info)
         
-        prompt = f"""Given these study notes, recommend the top 5 notes to review today.
-Consider importance, tags, and spaced repetition principles.
+        prompt = f"""Given these study notes, recommend the top 3-5 notes to review today.
+Provide specific reasons and what to focus on during review.
 
 Notes:
 {chr(10).join(note_info)}
 
-Respond with note IDs in order of priority, one per line, like:
-1. ID X - Brief reason
-2. ID Y - Brief reason
-..."""
+For each recommended note, provide:
+1. Why it should be reviewed today
+2. What specific concepts to focus on
+
+Respond in this format:
+ID X - [Why to review] | Focus: [What to focus on]
+ID Y - [Why to review] | Focus: [What to focus on]
+
+Example:
+ID 1 - Foundational concepts needed for upcoming topics | Focus: List operations and mutability
+ID 2 - Complex material that benefits from spaced repetition | Focus: Time complexity calculations"""
 
         response = self.openai_client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "You are a study assistant helping prioritize daily note reviews for effective learning."},
+                {"role": "system", "content": "You are an expert study coach helping students optimize their review sessions with specific, actionable guidance."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.5,
-            max_tokens=300
+            temperature=0.6,
+            max_tokens=500
         )
         
         ai_response = response.choices[0].message.content
         
-        # Extract note IDs
-        recommended_ids = []
-        for line in ai_response.split('\n'):
-            match = re.search(r'ID\s+(\d+)', line)
-            if match:
-                recommended_ids.append(int(match.group(1)))
-        
-        # Reorder notes based on AI recommendations
+        # Parse note IDs with reasons and focus areas
         note_dict = {note['id']: note for note in notes}
         recommended_notes = []
         
-        for note_id in recommended_ids:
-            if note_id in note_dict:
-                recommended_notes.append(note_dict[note_id])
+        for line in ai_response.split('\n'):
+            line = line.strip()
+            if not line:
+                continue
+            
+            # Match pattern: ID X - reason | Focus: focus_area
+            match = re.search(r'ID\s+(\d+)\s*-\s*(.+?)(?:\s*\|\s*Focus:\s*(.+))?$', line)
+            if match:
+                note_id = int(match.group(1))
+                reason = match.group(2).strip()
+                focus = match.group(3).strip() if match.group(3) else "Review key concepts"
+                
+                if note_id in note_dict:
+                    recommended_notes.append({
+                        'note': note_dict[note_id],
+                        'reason': reason,
+                        'focus': focus
+                    })
         
-        # Add remaining notes if less than 5 recommended
-        for note in notes:
-            if note not in recommended_notes and len(recommended_notes) < 5:
-                recommended_notes.append(note)
+        # If parsing failed, return notes without AI insights
+        if not recommended_notes:
+            return [{'note': note, 'reason': 'Recommended for review', 'focus': 'Review key concepts'} 
+                    for note in notes[:5]]
         
         return recommended_notes[:5]
 
