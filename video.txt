@@ -1,9 +1,9 @@
 # Video Demo URL
 
-Add your YouTube video URL here (6-8 minutes demonstrating StudyPal)
+8 minute demonstrating StudyPal
 
 Format:
-https://www.youtube.com/watch?v=YOUR_VIDEO_ID
+https://www.youtube.com/watch?v=_WVWMa1a_II
 
 The video should include:
 - Demonstration of StudyPal running
