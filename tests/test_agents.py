@@ -4,10 +4,10 @@ import os
 import pytest
 import tempfile
 import shutil
-from studypal.storage import Storage
-from studypal.pkms import PKMS
-from studypal.tasks import TaskManager
-from studypal.agents import LinkSuggester, TagSuggester, StudyPlanner, SummaryGenerator
+from src.studypal.storage import Storage
+from src.studypal.pkms import PKMS
+from src.studypal.tasks import TaskManager
+from src.studypal.agents import LinkSuggester, TagSuggester, StudyPlanner, SummaryGenerator
 
 # Check if valid API key is available
 VALID_API_KEY = os.getenv("OPENAI_API_KEY") and not os.getenv("OPENAI_API_KEY", "").startswith("sk-test")

@@ -2,30 +2,25 @@
 
 ## Installation & First Run
 
-1. **Navigate to the FinalProject directory:**
-   ```powershell
-   cd FinalProject
-   ```
-
-2. **Install dependencies:**
+1. **Install dependencies:**
    ```powershell
    pip install -r requirements.txt
    ```
 
-3. **Set up OpenAI API key (REQUIRED - Most features use AI!):**
+2. **Set up OpenAI API key (REQUIRED - Most features use AI!):**
    - See [OPENAI_SETUP.md](OPENAI_SETUP.md) for setup instructions
    - **Required for ALL AI features**: planning, search, suggestions, summaries, quiz, ask, expand
 
-4. **Verify installation:**
+3. **Verify installation:**
    ```powershell
-   py verify.py
+   py -m pytest tests/ -v
    ```
    
-   You should see all tests pass with green checkmarks.
+   You should see all tests pass.
 
 4. **Start StudyPal:**
    ```powershell
-   py run_studypal.py
+   py -m src.studypal
    ```
 
 ## Your First Session

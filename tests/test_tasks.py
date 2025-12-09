@@ -4,8 +4,8 @@ import pytest
 import tempfile
 import shutil
 from datetime import date, timedelta
-from studypal.storage import Storage
-from studypal.tasks import TaskManager
+from src.studypal.storage import Storage
+from src.studypal.tasks import TaskManager
 
 
 @pytest.fixture

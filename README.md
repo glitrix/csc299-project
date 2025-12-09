@@ -1,327 +1,476 @@
-# CSC299 Project
+# StudyPal 🎓
 
-This repository contains coursework for CSC299, including progressive task implementations (tasks1-5) and the final project.
+An intelligent terminal-based study assistant that combines Personal Knowledge Management (PKMS), task management, and AI-powered study tools to optimize your learning workflow.
 
----
+## 🎯 Project Overview
 
-## 🎓 FinalProject - StudyPal
+StudyPal is a comprehensive productivity application built in Python that demonstrates modern software engineering practices including modular architecture, comprehensive testing, and AI integration. It showcases full-stack development skills with a focus on user experience and intelligent automation.
 
-**StudyPal** is an intelligent, terminal-based study assistant that combines Personal Knowledge Management (PKMS), task management, and powerful AI agents to create a comprehensive learning companion. Built with Python and powered by OpenAI's GPT-4o-mini, StudyPal helps students organize their studies, manage their workload, and learn more effectively through AI-powered features.
+## 🎥 Demo
 
-### ✨ Core Features
+**📺 [Watch StudyPal in Action - 8 Minute Demo](https://www.youtube.com/watch?v=_WVWMa1a_II)**
 
-#### 📝 Personal Knowledge Management System (PKMS)
-- **Note Creation & Organization**: Create notes in Markdown format with rich content support
-- **Tagging System**: Categorize notes with multiple tags for easy organization
-- **Note Linking**: Connect related notes to build a knowledge graph
-- **Full-Text Search**: Search notes by keywords in title, content, or tags
-- **Tag Management**: View all tags and filter notes by specific tags
+*Perfect for HR/recruiters who want to see the application running without technical setup*
 
-#### ✅ Task Management
-- **Task Creation**: Create tasks with titles, descriptions, priorities (1-5), and due dates
-- **Status Tracking**: Track tasks through three states: `todo`, `in_progress`, and `done`
-- **Filtering & Organization**: Filter tasks by status or priority level
-- **Due Date Management**: Set and track task deadlines in YYYY-MM-DD format
-- **Task Statistics**: View completion rates, overdue tasks, and upcoming deadlines
+The video demonstrates:
+- Complete application walkthrough
+- Key features in action (AI agents, note management, task planning)
+- User interface and experience
+- Technical architecture overview
 
-#### 🤖 AI-Powered Features (All powered by OpenAI GPT-4o-mini)
+## ⭐ Key Highlights
 
-**Intelligent Note Management:**
-- **AI Summary Generator**: Creates intelligent, abstractive summaries of your notes for quick review
-- **Semantic Link Suggester**: Analyzes note content to find conceptual relationships and suggests meaningful connections between notes
-- **AI Tag Suggester**: Generates contextually relevant tags based on note content using natural language understanding
-- **Semantic Search**: Natural language search that finds notes by meaning, not just keywords - understands context and intent
+- **Clean Architecture**: Modular design with clear separation of concerns
+- **AI Integration**: OpenAI GPT-4 integration for intelligent study assistance  
+- **Comprehensive Testing**: Full test coverage with pytest
+- **Cross-Platform**: Works on Windows, macOS, and Linux
+- **Professional Documentation**: Complete API documentation and user guides
+- **Video Demo**: [8-minute walkthrough](docs/DEMO.md) perfect for HR and non-technical viewers
+- **Demo Script**: [Complete test scenario](docs/samplerun.md) for hands-on evaluation
 
-**Study Assistance:**
-- **AI Study Planner**: Generates balanced weekly study plans considering task priorities, deadlines, and workload distribution
-- **Daily Recommendations**: AI-powered task prioritization for optimal daily productivity
-- **Quiz Generator**: Creates practice questions (multiple choice, true/false, short answer) from your notes to test understanding
-- **Knowledge Assistant**: RAG-powered Q&A system that answers questions about your notes and tasks with conversation memory
-- **Study Buddy Chat Mode**: 🆕 Interactive conversational AI tutor that maintains context throughout your study session (see details below)
+## Features
 
-**Content Enhancement:**
-- **Note Expander**: AI-assisted content improvement with multiple modes:
-  - `expand`: Add more detail and explanation
-  - `clarify`: Improve clarity and explanation
-  - `examples`: Add practical examples
-  - `simplify`: Make content easier to understand
+### 📝 Personal Knowledge Management System (PKMS)
+- Create and organize notes in Markdown format
+- Tag notes for easy categorization
+- Link related notes together
+- Full-text search across all notes
+- Manage tags and relationships
 
-#### 💾 Data Storage
-- **JSON-based Storage**: Simple, portable data storage in local JSON files
-- **Cross-platform**: Works on Windows, macOS, and Linux
-- **Local First**: All data stored locally in the `data/` directory
-- **No Database Required**: Lightweight storage with no external dependencies
+### ✅ Task Management
+- Create tasks with priorities (1-5) and due dates
+- Track task status (todo, in_progress, done)
+- View overdue and upcoming tasks
+- Get task statistics and completion rates
 
-### 🚀 Available Commands
+### 🤖 AI Agents (Powered by OpenAI GPT-4o-mini)
 
-Once StudyPal is running, you can use these commands:
+**ALL AI features require an OpenAI API key.** See [OPENAI_SETUP.md](docs/OPENAI_SETUP.md) for setup instructions.
+
+#### Intelligent Note Management
+- **AI Summary Generator**: Creates intelligent, abstractive summaries of your notes
+- **Semantic Link Suggester**: Finds conceptual relationships between notes with AI reasoning
+- **AI Tag Suggester**: Generates contextually relevant tags based on note content
+- **Semantic Search**: Natural language search - find notes by meaning, not just keywords
+
+#### Study Assistance
+- **AI Study Planner**: Generates balanced weekly study plans considering priorities and deadlines
+- **Daily Recommendations**: AI-powered task prioritization for optimal productivity
+- **Quiz Generator**: Creates practice questions (multiple choice, true/false, short answer)
+- **Knowledge Assistant**: RAG-powered Q&A about your notes and tasks
+- **Study Buddy Chat Mode**: 🎓 NEW! Interactive conversational AI tutor
+  - Maintains context throughout your study session
+  - Quiz you on topics from your notes
+  - Explain difficult concepts
+  - Provide personalized study strategies
+  - See [CHAT_MODE.md](docs/CHAT_MODE.md) for full details
+
+#### Content Enhancement
+- **Note Expander**: AI-assisted content improvement (expand, clarify, add examples, simplify)
+
+**All AI features work together to create a powerful, intelligent study companion!**
+
+### 💾 Data Storage
+- Uses JSON files for simple, portable storage
+- All data stored locally in `data/` directory
+
+## Installation
+
+### Prerequisites
+- Python 3.11 or higher
+
+### Setup
+
+1. Clone or download this repository
+
+2. Install dependencies:
+```powershell
+pip install -r requirements.txt
+```
+
+4. **Set up OpenAI API key (REQUIRED):**
+   - See [OPENAI_SETUP.md](docs/OPENAI_SETUP.md) for complete instructions
+   - The `plan week` and `plan today` commands require an OpenAI API key
+
+## Usage
+
+### Starting StudyPal
+
+**Recommended method - using module execution:**
+
+**On Windows:**
+```powershell
+py -m src.studypal
+```
+
+**On macOS/Linux:**
+```bash
+python3 -m src.studypal
+```
+
+Or with custom data directory:
+
+**Windows:**
+```powershell
+py -m src.studypal --data-dir "C:\path\to\data"
+```
+
+**macOS/Linux:**
+```bash
+python3 -m src.studypal --data-dir "/path/to/data"
+```
+
+### Available Commands
+
+Once StudyPal is running, you'll see a prompt where you can enter commands.
 
 #### Note Commands
-```bash
+
+```
 add note "Title" [--tags tag1,tag2] [--content "content"]
-    Create a new note with optional tags and content
+    Create a new note
 
 list notes [--tag tagname]
-    List all notes or filter by a specific tag
+    List all notes or filter by tag
 
 show note <id>
-    Display a specific note with full details including linked notes
+    Display a specific note with full details
 
 search notes "keyword"
-    Search for notes (uses AI semantic search + keyword fallback)
+    Search for notes containing a keyword
 
 update note <id> [--title "New Title"] [--content "content"] [--tags tag1,tag2]
-    Update an existing note's title, content, or tags
+    Update an existing note
 
 delete note <id>
-    Delete a note permanently
+    Delete a note
 
 link note <id1> to <id2> [--type related]
-    Create a connection between two notes (default type: related)
+    Create a connection between two notes
 ```
 
 #### Task Commands
-```bash
+
+```
 add task "Title" [--due YYYY-MM-DD] [--priority 1-5] [--desc "description"]
-    Create a new task with optional due date, priority, and description
+    Create a new task
 
 list tasks [--status todo|in_progress|done] [--priority 1-5]
-    List all tasks or filter by status and/or priority
+    List all tasks or filter by status/priority
 
 show task <id>
     Display a specific task with full details
 
-update task <id> [--title "New Title"] [--status done] [--priority 4] [--due YYYY-MM-DD]
-    Update an existing task's properties
+update task <id> [--title "New Title"] [--status done] [--priority 4]
+    Update an existing task
 
 delete task <id>
-    Delete a task permanently
+    Delete a task
 
 stats
-    Show task statistics including completion rate, overdue, and upcoming tasks
+    Show task statistics (completion rate, overdue, etc.)
 ```
 
-#### AI Agent Commands (Requires OpenAI API Key)
-```bash
+#### AI Agent Commands
+
+```
 suggest links <note_id>
-    Get AI-powered suggestions for semantically related notes
+    Get suggestions for related notes based on content similarity
 
 suggest tags <note_id>
-    Get AI-generated contextually relevant tag suggestions
+    Get tag suggestions for a note
 
 plan week
-    Generate an intelligent weekly study plan based on your tasks and priorities
+    Generate a weekly study plan based on your tasks
 
 plan today
-    Get AI-recommended tasks to work on today based on priorities and deadlines
+    Get recommended tasks to work on today
 
 summary <note_id>
-    Generate an AI-powered abstractive summary of a note
+    Generate a summary of a note
 
 quiz <note_id> [--num 5]
-    Generate quiz questions from a note (default: 5 questions)
-    Supports multiple choice, true/false, and short answer formats
+    Generate quiz questions from a note
 
 expand <note_id> [--mode expand|clarify|examples|simplify]
-    AI-assisted note improvement (default mode: expand)
+    AI-assisted note improvement
 
 ask "your question"
-    Ask questions about your notes and tasks - the AI remembers the conversation
+    Ask questions about your notes and tasks (remembers conversation)
 
 clear conversation
-    Clear the AI conversation history and start fresh
+    Clear the AI conversation history
 
 chat
-    🆕 Enter interactive Study Buddy chat mode for conversational learning
-    - Maintains context throughout your session
-    - Quiz you on topics from your notes
-    - Explain difficult concepts with examples
-    - Provide personalized study strategies
-    - Interactive Q&A with memory
-    - Type 'bye', 'exit', or 'quit' to leave chat mode
+    Enter interactive Study Buddy chat mode (NEW! 🎓)
+    - Conversational AI tutor
+    - Remembers context throughout session
+    - Can quiz you, explain concepts, provide study guidance
+    - See docs/CHAT_MODE.md for details
 ```
 
 #### General Commands
-```bash
+
+```
 help
-    Display help information about available commands
+    Display help information
 
 exit or quit
-    Close StudyPal and save all data
+    Close StudyPal
 ```
 
-### 🎓 Study Buddy Chat Mode
+## Example Session
 
-The **Study Buddy Chat Mode** is an interactive conversational AI tutor that provides a personalized learning experience:
-
-**Key Features:**
-- **Conversational Context**: Remembers your entire conversation within the session
-- **Interactive Quizzing**: Request quizzes on any topic and get immediate feedback
-- **Concept Explanations**: Get clear, simple explanations of difficult topics
-- **Study Strategies**: Receive personalized advice on how to study effectively
-- **Motivation & Support**: Encouraging feedback to keep you motivated
-
-**Example Chat Session:**
 ```
-studypal> chat
+$ py -m src.studypal
+Welcome to StudyPal!
+Type 'help' for available commands or 'exit' to quit.
 
-🎓 Study Buddy Chat Mode
-Welcome! I'm your AI study buddy...
+studypal> add note "Python Basics" --tags python,programming --content "Variables, functions, and control flow"
+Created note #1: Python Basics
+Tags: python, programming
 
-💭 You: Can you explain recursion?
+studypal> add note "Object-Oriented Programming" --tags python,oop
+Created note #2: Object-Oriented Programming
 
-🤖 Study Buddy: Recursion is when a function calls itself to solve 
-a problem by breaking it down into smaller sub-problems...
+studypal> add task "Study Python loops" --due 2025-11-20 --priority 4
+Created task #1: Study Python loops
+Due: 2025-11-20
+Priority: 4
 
-💭 You: Show me an example
+studypal> list notes
+Found 2 note(s):
+----------------------------------------------------------------------
+#1: Python Basics [python, programming]
+    Variables, functions, and control flow
+#2: Object-Oriented Programming [python, oop]
+----------------------------------------------------------------------
 
-🤖 Study Buddy: [Provides example from your notes with explanation]
+studypal> suggest links 1
+Suggested links for note #1:
+----------------------------------------------------------------------
+#2: Object-Oriented Programming (similarity: 0.35)
+----------------------------------------------------------------------
 
-💭 You: Quiz me on this
+studypal> link note 1 to 2
+Linked note #1 to note #2 (related)
 
-🤖 Study Buddy: Great! Here's a question: [Creates quiz question]
+studypal> plan week
+Weekly Study Plan:
+======================================================================
 
-💭 You: bye
+Monday:
+  • Study Python loops (2h) [P4]
 
-👋 Thanks for studying with me!
-Session summary: 3 message exchanges
+Tuesday:
+  • Review: Python Basics (0.5h)
+
+...
+
+studypal> stats
+Task Statistics:
+======================================================================
+Total tasks: 1
+  • To do: 1
+  • In progress: 0
+  • Completed: 0
+
+Overdue: 0
+Due this week: 1
+Completion rate: 0.0%
+======================================================================
+
+studypal> exit
+Goodbye!
 ```
 
-See [CHAT_MODE.md](FinalProject/docs/CHAT_MODE.md) for complete details.
+## Project Structure
 
-### 📦 Installation & Setup
+```
+StudyPal/
+├── src/studypal/          # Main application code
+│   ├── __init__.py        # Package initialization
+│   ├── __main__.py        # Entry point
+│   ├── cli.py             # Command-line interface
+│   ├── pkms.py            # Personal Knowledge Management System
+│   ├── tasks.py           # Task management
+│   ├── agents.py          # AI agents
+│   ├── storage.py         # JSON storage layer
+│   └── utils.py           # Helper utilities
+│
+├── tests/                 # Test files
+│   ├── test_pkms.py       # PKMS tests
+│   ├── test_tasks.py      # Task management tests
+│   ├── test_agents.py     # AI agent tests
+│   └── test_inc.py        # Basic tests
+│
+├── data/                  # Data storage (JSON files)
+│   ├── notes.json         # Notes storage
+│   └── tasks.json         # Tasks storage
+│
+├── requirements.txt       # Python dependencies
+├── pyproject.toml         # Project configuration
+├── pytest.ini             # Test configuration
+└── README.md              # This file
+```
 
-**Prerequisites:**
-- Python 3.11 or higher
-- OpenAI API key (for AI features)
+## Testing
 
-**Quick Start:**
+Run tests using pytest:
 
-1. Navigate to the FinalProject directory:
-   ```powershell
-   cd FinalProject
-   ```
+**Windows:**
+```powershell
+py -m pytest
+```
 
-2. Install dependencies:
-   ```powershell
-   pip install -r requirements.txt
-   ```
+**macOS/Linux:**
+```bash
+python3 -m pytest
+```
 
-3. Set up your OpenAI API key:
-   ```powershell
-   $env:OPENAI_API_KEY="your-api-key-here"
-   ```
-   See [OPENAI_SETUP.md](FinalProject/docs/OPENAI_SETUP.md) for detailed setup instructions.
+Run tests with verbose output:
 
-4. Run StudyPal:
-   ```powershell
-   py -m src.studypal
-   ```
+```powershell
+py -m pytest -v
+```
 
-### 📚 Documentation
+Run specific test file:
 
-- **[FinalProject/README.md](FinalProject/README.md)**: Complete project documentation, usage guide, and technical details
-- **[FinalProject/docs/OPENAI_SETUP.md](FinalProject/docs/OPENAI_SETUP.md)**: OpenAI API key configuration guide
-- **[FinalProject/docs/CHAT_MODE.md](FinalProject/docs/CHAT_MODE.md)**: Study Buddy chat mode documentation
-- **[FinalProject/docs/QUICKSTART.md](FinalProject/docs/QUICKSTART.md)**: Quick start guide for new users
+```powershell
+py -m pytest tests/test_pkms.py
+```
 
-### 🧪 Testing
+## Development
 
-The project includes comprehensive test coverage:
+### Running Tests During Development
 
 ```powershell
 # Run all tests
 py -m pytest
 
-# Run with verbose output
-py -m pytest -v
-
-# Run specific test file
-py -m pytest tests/test_pkms.py
-
-# Run with coverage
+# Run with coverage (requires pytest-cov)
 py -m pytest --cov=src.studypal
+
+# Run specific test
+py -m pytest tests/test_pkms.py::test_add_note -v
 ```
 
-### 🏗️ Project Structure
+### Code Organization
 
+- **storage.py**: Low-level JSON file operations
+- **pkms.py**: Note management and PKMS features
+- **tasks.py**: Task creation, updates, and queries
+- **agents.py**: AI-powered analysis and suggestions
+- **cli.py**: Command parsing and user interface
+- **utils.py**: Helper functions used across modules
+
+## Technical Details
+
+### Cross-Platform Compatibility
+- Uses `pathlib` for file paths (works on Windows, macOS, Linux)
+- JSON storage is platform-independent
+- No OS-specific dependencies
+
+### Data Storage Format
+
+Notes are stored in `data/notes.json`:
+```json
+{
+  "notes": [
+    {
+      "id": 1,
+      "title": "Note Title",
+      "content": "Note content...",
+      "tags": ["tag1", "tag2"],
+      "created_at": "2025-11-12T10:00:00",
+      "updated_at": "2025-11-12T10:00:00"
+    }
+  ],
+  "links": [
+    {
+      "from_note_id": 1,
+      "to_note_id": 2,
+      "link_type": "related"
+    }
+  ],
+  "next_id": 2
+}
 ```
-FinalProject/
-├── src/studypal/          # Main application code
-│   ├── __init__.py        # Package initialization
-│   ├── __main__.py        # Entry point for module execution
-│   ├── cli.py             # Command-line interface and command routing
-│   ├── pkms.py            # Personal Knowledge Management System
-│   ├── tasks.py           # Task management system
-│   ├── agents.py          # AI agents (11 intelligent agents)
-│   ├── storage.py         # JSON storage layer
-│   └── utils.py           # Helper utilities
-├── tests/                 # Comprehensive test suite
-│   ├── test_pkms.py       # PKMS feature tests
-│   ├── test_tasks.py      # Task management tests
-│   ├── test_agents.py     # AI agent tests
-│   └── test_openai.py     # OpenAI integration tests
-├── data/                  # Local data storage
-│   ├── notes.json         # Notes storage
-│   └── tasks.json         # Tasks storage
-├── docs/                  # Documentation
-│   ├── OPENAI_SETUP.md    # API key setup guide
-│   ├── CHAT_MODE.md       # Chat mode documentation
-│   └── QUICKSTART.md      # Quick start guide
-├── requirements.txt       # Python dependencies
-└── README.md              # Project documentation
+
+Tasks are stored in `data/tasks.json`:
+```json
+{
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Task Title",
+      "description": "Description...",
+      "status": "todo",
+      "priority": 3,
+      "due_date": "2025-11-20",
+      "created_at": "2025-11-12T10:00:00",
+      "updated_at": "2025-11-12T10:00:00"
+    }
+  ],
+  "next_id": 2
+}
 ```
 
-### 🔧 Technical Highlights
+## AI Agent Details
 
-- **Modular Architecture**: Clean separation between PKMS, tasks, agents, and storage
-- **AI Integration**: Seamless OpenAI API integration with 11 specialized AI agents
-- **Cross-Platform**: Works on Windows, macOS, and Linux using pathlib
-- **Extensible Design**: Easy to add new features and AI agents
-- **Test Coverage**: Comprehensive pytest test suite
-- **Type Hints**: Full type annotations for better code quality
-- **Error Handling**: Graceful error handling and user-friendly messages
+### Link Suggester
+- Analyzes note content using keyword extraction
+- Calculates similarity using Jaccard index
+- Considers shared tags for additional similarity boost
+- Excludes already-linked notes from suggestions
 
-### 🎯 Use Cases
+### Tag Suggester
+- Extracts keywords from note content
+- Matches against existing tags in the system
+- Suggests tags that appear in the note but aren't currently assigned
 
-- **Study Organization**: Keep all your study notes organized with tags and links
-- **Exam Preparation**: Generate quizzes and study plans for upcoming exams
-- **Concept Learning**: Use chat mode to understand difficult concepts
-- **Task Tracking**: Manage study tasks, assignments, and deadlines
-- **Knowledge Building**: Build a connected knowledge graph of related topics
-- **Time Management**: Get AI-powered daily and weekly study schedules
+### Study Planner
+- Prioritizes tasks by due date and priority level
+- Distributes tasks across the week
+- Includes review time for existing notes
+- Estimates time based on task priority
+
+### Summary Generator
+- Extracts key sentences from note content
+- Uses simple extractive summarization
+- Returns first, middle, and last sentences for longer notes
+
+## 🛠️ Technical Stack
+
+- **Language**: Python 3.11+
+- **AI Integration**: OpenAI GPT-4 API
+- **Testing**: pytest with comprehensive coverage
+- **Data Storage**: JSON with custom storage layer
+- **Architecture**: Clean, modular design patterns
+- **CLI Framework**: Custom command-line interface
+
+## 📈 Development Process
+
+This project evolved through multiple iterations, demonstrating agile development practices and continuous improvement. The development history, including all iterations and design decisions, is preserved in the `archive/` directory.
+
+## 🚀 Future Enhancements
+
+- Web interface for broader accessibility
+- Database integration for improved performance
+- Advanced AI features using latest language models
+- Mobile companion app
+- Collaborative study features
+
+## License
+
+MIT License - Open source project
+
+## Author
+
+**Joshua Kroeger**  
+Software Engineering Student  
+*Passionate about AI-driven productivity tools and clean code architecture*
 
 ---
 
-## 📂 Other Directories
-
-- **tasks1/**: Basic task management system (JSON storage)
-- **tasks2/**: Added PKMS with note management and tagging
-- **tasks3/**: Restructured with proper package structure and testing
-- **tasks4/**: Initial AI agent implementations
-- **tasks5/**: Additional task management features
-- **AI Chats/**: Development conversation logs and planning documents
-
----
-
-## 📝 Development Notes
-
-This project was developed iteratively, with each task building upon the previous one:
-
-1. **tasks1**: Basic task manager with JSON storage
-2. **tasks2**: Added Personal Knowledge Management System (PKMS)
-3. **tasks3**: Restructured with proper Python packaging and pytest
-4. **tasks4**: Integrated OpenAI and implemented AI agents
-5. **FinalProject**: Combined all features with comprehensive AI capabilities
-
-The development process is documented in the `AI Chats/` directory, showing the evolution of the project through various iterations.
-
----
-
-## 📄 License
-
-Educational project - CSC299 Final Project
-
-## 👤 Author
-
-Created as part of CSC299 coursework
+*This project demonstrates proficiency in Python development, AI integration, testing practices, and software architecture design.*
