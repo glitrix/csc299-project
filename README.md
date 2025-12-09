@@ -467,7 +467,7 @@ MIT License - Open source project
 
 ## Author
 
-**Joshua Kroeger**  
+**Joshua Kowalczuk**  
 Software Engineering Student  
 *Passionate about AI-driven productivity tools and clean code architecture*
 
